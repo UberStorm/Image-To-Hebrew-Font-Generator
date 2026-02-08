@@ -1,6 +1,6 @@
 <div dir="rtl">
 
-# 🔤 Hebrew Font Maker
+# 🔤 Image to Hebrew Font Generator
 
 **יוצר פונטים עברית מתמונות AI**
 
