@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hebrew Font Maker - יוצר פונטים עברית</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Image to Hebrew Font Generator</h1>
+            <p>יוצר פונטים עבריים מתמונות</p>
+        </header>
+
+        <nav class="steps-indicator">
+            <div class="step active" id="step-1">
+                <span class="step-number">1</span>
+                <span class="step-label">העלאת תמונה</span>
+            </div>
+            <div class="step" id="step-2">
+                <span class="step-number">2</span>
+                <span class="step-label">שיוך אותיות</span>
+            </div>
+            <div class="step" id="step-3">
+                <span class="step-number">3</span>
+                <span class="step-label">תצוגה מקדימה</span>
+            </div>
+            <div class="step" id="step-4">
+                <span class="step-number">4</span>
+                <span class="step-label">יצירת פונט</span>
+            </div>
+        </nav>
+
+        <main>
+            <!-- Step 1: Upload Image -->
+            <section id="upload-section" class="section active">
+                <h2>שלב 1: העלאת תמונה של אותיות</h2>
+                <p>העלה תמונה המכילה אותיות שיצרת עם AI או סתם ציירת בפוטושופ...</p>
+                
+                <div class="upload-area" id="upload-area">
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <p>יש לגרור ולשחרר תמונה כאן<br>או ללחוץ לבחירה</p>
+                    <input type="file" id="file-input" accept="image/*" style="display: none;">
+                </div>
+
+                <div id="preview-container" class="preview-container" style="display: none;">
+                    <img id="preview-image" src="" alt="Preview">
+                    <div class="separation-control">
+                        <label for="separation-level">רמת הפרדה (לתמונות צפופות):</label>
+                        <input type="range" id="separation-level" min="0" max="5" value="1" step="1">
+                        <span id="separation-level-val">1</span>
+                        <div class="separation-hint">← 0 = ללא הפרדה | 5 = הפרדה חזקה →</div>
+                    </div>
+                    <button id="clear-upload" class="btn btn-secondary">נקה ובחר תמונה אחרת</button>
+                </div>
+
+                <button id="upload-btn" class="btn btn-primary" style="display: none;">העלה וזהה אותיות</button>
+
+                <div class="project-import-hint">
+                    <p>⬇️ יש לך פרויקט שמור?</p>
+                    <label class="btn btn-secondary import-label">
+                        📤 טעינת פרויקט (.hfm)
+                        <input type="file" id="import-file-step1" accept=".hfm" style="display:none;" onchange="importProject(this)">
+                    </label>
+                </div>
+            </section>
+
+            <!-- Step 2: Detection Review & Letter Assignment -->
+            <section id="detection-section" class="section">
+                <!-- Sub-step 2a: Detection Review (visual bbox overlay) -->
+                <div id="detection-review" class="detection-review">
+                    <h2>שלב 2א: סקירת זיהויים</h2>
+                    <p>מסומנות <span id="review-count">0</span> צורות על התמונה.
+                       <strong>גררו מלבן</strong> להוספת זיהוי חסר, או <strong>לחצו על מלבן קיים</strong> למחיקתו.</p>
+
+                    <div class="review-toolbar">
+                        <button id="redetect-review-btn" class="btn btn-secondary" onclick="redetectFromReview()">
+                            🔄 זיהוי מחדש
+                        </button>
+                        <div class="redetect-separation-inline">
+                            <label>הפרדה:</label>
+                            <input type="range" id="review-separation" min="0" max="5" value="1" step="1">
+                            <span id="review-separation-val">1</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="confirmReviewAndProceed()">
+                            ✅ אישור והמשך לשיוך
+                        </button>
+                    </div>
+
+                    <div class="review-canvas-container">
+                        <canvas id="review-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Sub-step 2b: Letter Assignment (cards) -->
+                <div id="assignment-panel" style="display:none;">
+                    <h2>שלב 2ב: שיוך אותיות</h2>
+                    <p>נמצאו <span id="letter-count">0</span> צורות. יש ללחוץ על צורה ולהקליד את האות המתאימה במקלדת.</p>
+
+                <div class="assignment-instructions">
+                    <div class="instruction-item">1. לחצו על כרטיס</div>
+                    <div class="instruction-item">2. הקלידו את האות במקלדת</div>
+                    <div class="instruction-item">3. הפעולה האוטומטית מתבצעת</div>
+                    <div class="instruction-item">Delete = מחיקת שיוך | Esc = ביטול בחירה</div>
+                </div>
+
+                <div class="merge-toolbar">
+                    <button id="back-to-review-btn" class="btn btn-secondary" onclick="backToReview()">
+                        🔙 חזרה לסקירת זיהויים
+                    </button>
+                    <button id="toggle-merge-mode" class="btn btn-merge" onclick="toggleMergeMode()">
+                        🔗 מצב מיזוג / פיצול
+                    </button>
+                    <span id="merge-mode-hint" class="merge-hint" style="display:none;">
+                        בחירת 2+ כרטיסים למיזוג, או כרטיס אחד לפיצול
+                    </span>
+                    <button id="merge-btn" class="btn btn-primary merge-action-btn" style="display:none;" onclick="mergeSelected()">
+                        מיזוג נבחרים (<span id="merge-count">0</span>)
+                    </button>
+                    <button id="split-btn" class="btn btn-split merge-action-btn" style="display:none;" onclick="splitSelected()">
+                        ✂️ פיצול נבחר
+                    </button>
+                    <button id="cancel-merge-btn" class="btn btn-secondary merge-action-btn" style="display:none;" onclick="toggleMergeMode()">
+                        ביטול
+                    </button>
+                </div>
+
+                <div class="assignment-stats-bar">
+                    <span id="assignment-stats">0 / 0 אותיות הוקצו</span>
+                </div>
+
+                <div id="detection-grid" class="detection-grid">
+                    <!-- Cards will be added here -->
+                </div>
+
+                <div class="button-group">
+                    <button id="back-btn-detection" class="btn btn-secondary">חזור</button>
+                    <button id="next-btn-detection" class="btn btn-primary">תצוגה מקדימה</button>
+                </div>
+                </div><!-- /assignment-panel -->
+            </section>
+
+            <!-- Step 3: Preview -->
+            <section id="preview-section" class="section">
+                <h2>שלב 3: תצוגה מקדימה</h2>
+                <p>הקלידו טקסט למטה כדי לראות איך הפונט ייראה. ניתן לכוונן גודל ומיקום לכל תו.</p>
+
+                <div class="preview-input-area">
+                    <input type="text" id="preview-text-input" class="preview-text-field"
+                           placeholder="הקלד כאן טקסט לתצוגה מקדימה..."
+                           value="אבגדהוזחטיכלמנסעפצקרשת?!1234567890,'אןאםאךאץגם[]/*-=+!@#$%^&*_~">
+                </div>
+
+                <div id="preview-render-area" class="preview-render-area">
+                    <!-- Rendered glyph images appear here -->
+                </div>
+
+                <div class="preview-adjustments">
+                    <h3>כוונון תווים</h3>
+                    <p class="adjust-hint">לחצו על תו בתצוגה המקדימה לערוך, או בחרו מהרשימה.</p>
+
+                    <!-- Apply to ALL controls -->
+                    <div class="adjust-all-section">
+                        <h4>🔧 החל על כל האותיות</h4>
+                        <div class="adjust-row">
+                            <label>גודל (Scale):</label>
+                            <input type="range" id="adjust-all-scale" min="50" max="200" value="100" step="5">
+                            <span id="adjust-all-scale-val">100%</span>
+                        </div>
+                        <div class="adjust-row">
+                            <label>הזזה אנכית (Y):</label>
+                            <input type="range" id="adjust-all-offsetY" min="-200" max="200" value="0" step="5">
+                            <span id="adjust-all-offsetY-val">0</span>
+                        </div>
+                        <div class="adjust-row">
+                            <label>הזזה אופקית (X):</label>
+                            <input type="range" id="adjust-all-offsetX" min="-100" max="100" value="0" step="5">
+                            <span id="adjust-all-offsetX-val">0</span>
+                        </div>
+                        <div class="adjust-row">
+                            <label>ריווח (Spacing):</label>
+                            <input type="range" id="adjust-all-spacing" min="-50" max="50" value="0" step="5">
+                            <span id="adjust-all-spacing-val">0</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="applyToAll()">החל על הכל</button>
+                        <button class="btn btn-secondary" onclick="resetAllAdjustments()">איפוס הכל</button>
+                    </div>
+
+                    <!-- Per-character controls -->
+                    <div id="adjust-controls" class="adjust-controls" style="display:none;">
+                        <div class="adjust-char-label">תו: <span id="adjust-char-name">-</span></div>
+                        <div class="adjust-row">
+                            <label>גודל (Scale):</label>
+                            <input type="range" id="adjust-scale" min="50" max="200" value="100" step="5">
+                            <span id="adjust-scale-val">100%</span>
+                        </div>
+                        <div class="adjust-row">
+                            <label>הזזה אנכית (Y):</label>
+                            <input type="range" id="adjust-offsetY" min="-200" max="200" value="0" step="5">
+                            <span id="adjust-offsetY-val">0</span>
+                        </div>
+                        <div class="adjust-row">
+                            <label>הזזה אופקית (X):</label>
+                            <input type="range" id="adjust-offsetX" min="-100" max="100" value="0" step="5">
+                            <span id="adjust-offsetX-val">0</span>
+                        </div>
+                        <div class="adjust-row">
+                            <label>ריווח (Spacing):</label>
+                            <input type="range" id="adjust-spacing" min="-50" max="50" value="0" step="5">
+                            <span id="adjust-spacing-val">0</span>
+                        </div>
+                        <button class="btn btn-secondary" onclick="resetCurrentAdjustment()">איפוס תו זה</button>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="back-btn-preview" class="btn btn-secondary">חזור</button>
+                    <button id="next-btn-preview" class="btn btn-primary">יצור פונט</button>
+                </div>
+            </section>
+
+            <!-- Step 4: Font Generation -->
+            <section id="generation-section" class="section">
+                <h2>שלב 4: יצירת הפונט</h2>
+                
+                <div class="font-config">
+                    <label for="font-name">שם הפונט:</label>
+                    <input type="text" id="font-name" placeholder="למשל: MyCoolFont" value="HebrewFont">
+                    
+                    <div class="font-meta-toggle">
+                        <button type="button" class="btn btn-link" onclick="toggleFontMeta()">⚙️ פרטים נוספים (אופציונלי)</button>
+                    </div>
+                    <div id="font-meta-fields" class="font-meta-fields" style="display:none;">
+                        <div class="meta-row">
+                            <label for="font-author">שם היוצר:</label>
+                            <input type="text" id="font-author" placeholder="למשל: Israel Israeli">
+                        </div>
+                        <div class="meta-row">
+                            <label for="font-description">תיאור:</label>
+                            <input type="text" id="font-description" placeholder="למשל: פונט עברי מעוצב בסגנון מודרני">
+                        </div>
+                        <div class="meta-row">
+                            <label for="font-version">גרסה:</label>
+                            <input type="text" id="font-version" placeholder="למשל: 1.0">
+                        </div>
+                        <div class="meta-row">
+                            <label for="font-license">רישיון:</label>
+                            <input type="text" id="font-license" placeholder="למשל: Free for personal use">
+                        </div>
+                        <div class="meta-row">
+                            <label for="font-url">כתובת אתר:</label>
+                            <input type="text" id="font-url" placeholder="למשל: https://example.com">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="generation-status">
+                    <p>מצב: <span id="status-text">מוכן ליצירה</span></p>
+                    <div id="progress-bar" class="progress-bar" style="display: none;">
+                        <div id="progress-fill" class="progress-fill"></div>
+                    </div>
+                </div>
+
+                <div id="result-container" style="display: none;">
+                    <div class="success-message">
+                        <h3>הפונט נוצר בהצלחה!</h3>
+                        <p id="result-message"></p>
+                        <p id="result-path" class="result-path"></p>
+                        <button id="open-folder-btn" class="btn btn-success">פתח תיקיית פונטים</button>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="back-btn-gen" class="btn btn-secondary">חזור</button>
+                    <button id="generate-btn" class="btn btn-primary">צור פונט</button>
+                </div>
+
+                <div class="project-io">
+                    <h3>💾 שמירה וטעינת פרויקט</h3>
+                    <p class="io-hint">שמרו את הפרויקט כדי לחזור ולערוך מאוחר יותר.</p>
+                    <div class="button-group">
+                        <button id="export-btn" class="btn btn-success" onclick="exportProject()">
+                            📥 ייצוא פרויקט (.hfm)
+                        </button>
+                        <label class="btn btn-secondary import-label">
+                            📤 טעינת פרויקט
+                            <input type="file" id="import-file" accept=".hfm" style="display:none;" onchange="importProject(this)">
+                        </label>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Hebrew Font Maker by Maor Eliezer | 2026</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
