@@ -1345,8 +1345,9 @@ def api_import_image():
             original_img = detector.load_image(tmp_path)
             binary = detector.preprocess_image(original_img, separation_level=0)
 
-            # Detect contours from image
-            letters = detector.detect_letters(tmp_path, separation_level=0)
+            # Detect contours from image (returns tuple: letters, orig_img, binary_img)
+            result = detector.detect_letters(tmp_path, separation_level=0)
+            letters = result[0]  # first element is the list of letter dicts
 
             if not letters:
                 return jsonify({'error': 'No contours detected in image'}), 400
