@@ -103,7 +103,9 @@ run_fonteditor.bat
 
 <div dir="ltr" align="center">
 
-![Font Editor](screenshots/Screenshot_editor.png)
+| עריכת נקודות וקונטורים | כלים מתקדמים ויצוא |
+|:---:|:---:|
+| ![Font Editor 1](screenshots/Screenshot_editor.png) | ![Font Editor 2](screenshots/Screenshot_editor2.png) |
 
 </div>
 
