@@ -137,6 +137,40 @@ html[dir="rtl"] body { direction: rtl; }
     cursor: pointer;
 }
 
+/* Toolbar dropdown */
+.tb-dropdown {
+    position: relative;
+    display: inline-flex;
+}
+.tb-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 100;
+    min-width: 100px;
+    padding: 4px 0;
+}
+.tb-dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 6px 14px;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 0.85em;
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.tb-dropdown-item:hover {
+    background: var(--accent);
+    color: #fff;
+}
+
 #font-select {
     background: var(--bg-input);
     color: var(--text);
@@ -194,6 +228,7 @@ html[dir="rtl"] body { direction: rtl; }
 /* -- Glyph Panel (left) -- */
 .glyph-panel {
     width: 220px;
+    position: relative;
 }
 
 .glyph-search-box {
@@ -273,6 +308,7 @@ html[dir="rtl"] body { direction: rtl; }
     width: 260px;
     border-right: none;
     border-left: 1px solid var(--border);
+    position: relative;
 }
 
 .props-body {
@@ -499,9 +535,7 @@ html[dir="rtl"] body { direction: rtl; }
 
 .ctrl-point {
     cursor: grab;
-    transition: r 0.1s;
 }
-.ctrl-point:hover { r: 6; }
 .ctrl-point.dragging { cursor: grabbing; }
 
 /* ===== Preview Bar ===== */
@@ -874,4 +908,199 @@ html[dir="rtl"] body { direction: rtl; }
     display: block;
     margin: 16px auto 0;
     min-width: 80px;
+}
+
+/* ===== Bezier Handle Lines ===== */
+.handle-line {
+    stroke: var(--text-dim);
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* ===== Grid Overlay ===== */
+.grid-line {
+    stroke: var(--border);
+    stroke-width: 0.5;
+    opacity: 0.25;
+    pointer-events: none;
+}
+.grid-line.major {
+    opacity: 0.45;
+    stroke-width: 0.8;
+}
+
+/* ===== Rulers ===== */
+.ruler {
+    background: var(--bg-panel);
+    position: absolute;
+    z-index: 10;
+    overflow: hidden;
+    user-select: none;
+}
+.ruler-h {
+    top: 0; left: 24px; right: 0;
+    height: 24px;
+    border-bottom: 1px solid var(--border);
+}
+.ruler-v {
+    top: 24px; left: 0; bottom: 0;
+    width: 24px;
+    border-right: 1px solid var(--border);
+}
+.ruler-corner {
+    position: absolute;
+    top: 0; left: 0;
+    width: 24px; height: 24px;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    z-index: 11;
+}
+.ruler canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.canvas-wrap.has-rulers {
+    position: relative;
+}
+.canvas-wrap.has-rulers > svg {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    width: calc(100% - 24px) !important;
+    height: calc(100% - 24px) !important;
+}
+
+/* ===== Custom Guidelines ===== */
+.custom-guide {
+    stroke: #ff6b9d;
+    stroke-width: 1;
+    stroke-dasharray: 6 4;
+    opacity: 0.7;
+    cursor: pointer;
+    pointer-events: stroke;
+}
+.custom-guide:hover {
+    stroke-width: 2.5;
+    opacity: 1;
+}
+
+/* ===== Collapsible Panels ===== */
+.panel-toggle {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px; height: 48px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    cursor: pointer;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: var(--text-dim);
+    transition: background 0.15s;
+}
+.panel-toggle:hover {
+    background: var(--accent);
+    color: #fff;
+}
+.glyph-panel .panel-toggle { right: -16px; }
+.props-panel .panel-toggle { left: -16px; }
+.glyph-panel.collapsed,
+.props-panel.collapsed {
+    width: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+    border: none !important;
+}
+.glyph-panel.collapsed .panel-toggle { right: -20px; border-radius: 0 3px 3px 0; }
+.props-panel.collapsed .panel-toggle { left: -20px; border-radius: 3px 0 0 3px; }
+
+/* ===== Multi-Size Preview ===== */
+.multi-preview-row {
+    display: flex;
+    gap: 12px;
+    padding: 6px 16px;
+    overflow-x: auto;
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border);
+}
+.multi-preview-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+}
+.multi-preview-item .size-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 2px;
+}
+.multi-preview-item .preview-text {
+    white-space: nowrap;
+    direction: rtl;
+}
+
+/* ===== Kerning Editor ===== */
+.kern-dialog { min-width: 500px; max-height: 80vh; overflow-y: auto; }
+.kern-pair-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+}
+.kern-pair-row:last-child { border-bottom: none; }
+.kern-glyph { font-size: 1.3em; font-weight: 700; min-width: 32px; text-align: center; }
+.kern-value-input {
+    width: 70px;
+    background: var(--bg-input);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 6px;
+    text-align: center;
+}
+.kern-del-btn {
+    background: none; border: none; color: var(--danger);
+    cursor: pointer; font-size: 14px; padding: 2px 6px;
+}
+.kern-del-btn:hover { background: var(--danger); color: #fff; border-radius: 3px; }
+.kern-add-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 0; margin-top: 4px; border-top: 1px solid var(--border);
+}
+.kern-add-row select, .kern-add-row input {
+    background: var(--bg-input); color: var(--text);
+    border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px;
+}
+
+/* ===== SVG Import Dialog ===== */
+.svg-import-textarea {
+    width: 100%;
+    height: 120px;
+    background: var(--bg-input);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    resize: vertical;
+    margin: 8px 0;
+}
+
+/* ===== Snap Indicator ===== */
+.snap-indicator {
+    font-size: 10px;
+    color: var(--accent);
+    margin-left: 6px;
+    opacity: 0.8;
 }

@@ -8,7 +8,7 @@
 
 שני כלים משלימים:
 1. **Font Generator** — יוצר פונט TTF מתמונת AI: זיהוי אוטומטי של אותיות, שיוך, כוונון ויצירת קובץ TTF
-2. **Font Editor** — עורך ויזואלי לקבצי TTF: עריכת נקודות, ציור קונטורים, עיגול פינות ותצוגה מקדימה חיה
+2. **Font Editor** — עורך ויזואלי לקבצי TTF: עריכת נקודות, ציור קונטורים, ייבוא SVG, ייצוא WOFF/WOFF2, עריכת kerning ותצוגה מקדימה חיה
 
 ---
 
@@ -125,9 +125,38 @@ run_fonteditor.bat
 - **החלפת סוג נקודה** — מעבר בין on-curve ל-off-curve בלחיצה
 - **ביטול/חזרה (Undo/Redo)** — Ctrl+Z / Ctrl+Y, עד 50 רמות לכל גליף
 
+#### שינוי צורה (Transform)
+- **הפיכה (Flip)** — אופקי (H) ואנכי (Shift+H), לנקודות נבחרות או לגליף שלם
+- **סיבוב (Rotate)** — 90° (R), -90° (Shift+R)
+- **העתקה והדבקה** — Ctrl+C/V לנקודות נבחרות, העתקת גליף שלם לגליף אחר
+- **הוספת נקודה על קטע** — קליק ימני על קו ← "הוסף נקודה כאן"
+- **תפריט הקשר (Right-click)** — גישה מהירה למחיקה, הפיכה, סיבוב, העתקה/הדבקה
+
+#### ייבוא/ייצוא (v5 — חדש ✨)
+- **ייבוא SVG** — הדבקת נתיב SVG (תוכן `d`) או העלאת קובץ SVG ← המרה אוטומטית לנקודות TrueType
+- **ייצוא WOFF / WOFF2 / TTF** — תפריט Export עם שלושה פורמטים. WOFF2 דורש חבילת `brotli`
+- **עריכת מטא-דאטה** — שם, גרסה, מעצב, URL, רישיון, Ascender/Descender/LineGap
+
+#### כלי קנבס (v5 — חדש ✨)
+- **ידיות בזייה (Bézier Handles)** — קווים מקווקווים מנקודות off-curve לשכנות on-curve, ניתנים לגרירה
+- **הצמדה לרשת (Snap to Grid)** — נקודות נצמדות לרשת מתכוונת; רשת מוצגת כשכבת-על על הקנבס
+- **סרגלים (Rulers)** — סרגלים אופקי ואנכי מסביב לקנבס, מציגים יחידות פונט, מתעדכנים עם זום ופאן
+- **קווי עזר מותאמים (Custom Guidelines)** — הוספת קווים אופקיים/אנכיים במיקום חופשי, דאבל-קליק למחיקה
+
+#### ריווח אותיות (Kerning) (v5 — חדש ✨)
+- **עורך kerning** — צפייה ועריכה של כל זוגות הריווח בפונט
+- **הוספה ומחיקה של זוגות** — בחירת שני גליפים וקביעת ערך ריווח (חיובי/שלילי)
+
+#### ממשק ותצוגה (v5 — חדש ✨)
+- **פאנלים מתקפלים** — לחצני ◀/▶ מכווצים את פאנל הגליפים ואת פאנל המאפיינים כדי להגדיל את שטח העריכה
+- **תצוגה מקדימה מרובת-גדלים** — מציגה את הטקסט ב-7 גדלים (12–96px) במקביל
+- **זום ופאן** — גלגלת עכבר לזום, Space+גרירה לפאן, לחצן "Fit" לאיפוס
+- **תצוגת קואורדינטות** — ריחוף על נקודה מציג מיקום ומזהה (on/off curve)
+
 #### ממשק דו-שפתי 🇮🇱 🇺🇸
 - **עברית / אנגלית** — מתג שפה בפינת הממשק
 - **נשמר בדפדפן** — הבחירה נזכרת בין הפעלות
+- **כל המחרוזות מתורגמות** — יותר מ-130 מחרוזות תורגמו לשתי השפות
 
 ### ⌨️ קיצורי מקלדת
 
@@ -136,13 +165,21 @@ run_fonteditor.bat
 | V | כלי בחירה |
 | M | מרקיזה |
 | P | עט |
+| H | הפוך אופקי |
+| Shift+H | הפוך אנכי |
+| R / Shift+R | סיבוב 90° / -90° |
 | Ctrl+Z | ביטול |
 | Ctrl+Y / Ctrl+Shift+Z | חזרה |
 | Ctrl+A | בחר הכל |
+| Ctrl+C | העתק נקודות / גליף |
+| Ctrl+V | הדבק |
 | Ctrl+S | שמור |
 | Delete | מחק נקודות / איפוס גליף |
 | חצים | הזז (10px, Shift=1px) |
 | +/- | הגדל/הקטן |
+| Space+גרירה | פאן הקנבס |
+| גלגלת עכבר | זום |
+| ? | הצג קיצורי מקלדת |
 | Esc | בטל בחירה / בטל עט |
 
 ---
@@ -156,15 +193,15 @@ hebrew-font-maker/
 │   ├── image_processor.py     # זיהוי אותיות, קונטורים, separation levels
 │   ├── font_generator.py      # יצירת TTF — Bézier, fallback glyphs, metadata
 │   ├── hebrew_support.py      # מילון אותיות, צורות סופיות, RTL
-│   └── font_editor_server.py  # שרת Flask — עורך פונטים (פורט 5001)
+│   └── font_editor_server.py  # שרת Flask — עורך פונטים (פורט 5001), ייבוא SVG, ייצוא WOFF/WOFF2, kerning
 ├── frontend/
 │   ├── index.html             # ממשק יוצר הפונטים (wizard 4 שלבים)
 │   ├── script.js              # לוגיקת UI: שיוך, מיזוג, תצוגה מקדימה
 │   └── style.css              # עיצוב responsive + RTL
 ├── font_editor/
 │   ├── index.html             # ממשק עורך הפונטים
-│   ├── editor.js              # לוגיקת עורך: בחירה, עט, שכבות, undo, smooth, i18n
-│   └── editor.css             # עיצוב כהה לעורך
+│   ├── editor.js              # לוגיקת עורך: בחירה, עט, שכבות, undo, smooth, i18n, Bézier handles, grid snap, rulers, guidelines, kerning, SVG import, multi-preview
+│   └── editor.css             # עיצוב כהה לעורך + סרגלים, רשת, קווי עזר, פאנלים מתקפלים
 ├── config.py                  # הגדרות (גודל פונט, סינון, נתיבים)
 ├── requirements.txt           # חבילות Python
 ├── install.bat                # סקריפט התקנה (venv + pip)
@@ -184,6 +221,7 @@ hebrew-font-maker/
 | עיבוד תמונה | OpenCV 4.8 (Otsu, RETR_CCOMP, morphological operations) |
 | יצירת/עריכת פונטים | fontTools (FontBuilder, TTGlyphPen, GlyphCoordinates, SVGPathPen) |
 | צד לקוח | Vanilla HTML/CSS/JS, Canvas API, SVG (ללא frameworks) |
+| ייצוא | WOFF, WOFF2 (דורש brotli), TTF |
 | סביבה | Python venv, Windows batch scripts |
 
 ---
@@ -203,7 +241,14 @@ hebrew-font-maker/
 - **TrueType points:** נקודות on-curve (flag=1) יוצרות קווים ישרים, off-curve (flag=0) — עקומות קוואדרטיות
 - **Smooth corners:** החלפת נקודת פינה ב-3 נקודות (on → off → on) ליצירת Bézier curve
 - **Undo/Redo:** מחסנית snapshots לכל גליף (עד 50 רמות), כל פעולת עריכה שומרת מצב לפני השינוי
-- **i18n:** מילון תרגום 80+ מחרוזות, שפה נשמרת ב-localStorage, RTL/LTR אוטומטי
+- **i18n:** מילון תרגום 130+ מחרוזות, שפה נשמרת ב-localStorage, RTL/LTR אוטומטי
+- **ייבוא SVG:** פירוק מלא של נתיבי SVG (M/L/H/V/Q/C/S/T/A/Z) — המרת cubic→quadratic, היפוך Y לקואורדינטות פונט, scale מתכוונן
+- **ייצוא WOFF/WOFF2:** שימוש ב-fontTools flavor attribute. WOFF2 דורש חבילת `brotli` (מותקנת ב-requirements)
+- **Kerning:** קריאה/כתיבה של kern table format 0 דרך fontTools. תצוגת זוגות עם שמות גליפים
+- **Bézier handles:** קווים מקווקווים בין נקודות off-curve לשכנותיהן — ויזואליזציה של עקומות השליטה
+- **Snap to grid:** הצמדה חכמה — snapVal() מעגל לכפולות של gridSnapSize (ברירת מחדל 50 יחידות)
+- **Rulers:** Canvas API מצייר סרגלים אופקי/אנכי, rulerStep() מחשב מרווח אדפטיבי לפי רמת הזום
+- **Custom guidelines:** קווים אופקיים/אנכיים חופשיים, נשמרים ב-State, דאבל-קליק למחיקה
 
 ---
 

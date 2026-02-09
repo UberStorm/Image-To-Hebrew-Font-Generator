@@ -29,14 +29,25 @@
             </label>
             <button class="tb-btn tb-save" id="save-btn" title="Save (Ctrl+S)">💾 Save</button>
             <button class="tb-btn" id="save-as-btn" title="Save As">💾 Save As</button>
+            <div class="tb-dropdown">
+                <button class="tb-btn" id="export-btn" title="Export As...">📤 Export</button>
+                <div class="tb-dropdown-menu" id="export-menu" style="display:none;">
+                    <button class="tb-dropdown-item" id="export-ttf">TTF</button>
+                    <button class="tb-dropdown-item" id="export-woff">WOFF</button>
+                    <button class="tb-dropdown-item" id="export-woff2">WOFF2</button>
+                </div>
+            </div>
+            <button class="tb-btn" id="import-svg-btn" title="Import SVG path">📥 SVG</button>
             <button class="tb-btn" id="metadata-btn" title="Font Metadata">⚙ Metadata</button>
+            <button class="tb-btn" id="kerning-btn" title="Kerning Editor">⇔ Kern</button>
         </div>
     </header>
 
     <!-- ===== Main Layout ===== -->
     <main class="editor-main">
         <!-- Left: Glyph Grid -->
-        <aside class="panel glyph-panel">
+        <aside class="panel glyph-panel" id="glyph-panel">
+            <div class="panel-toggle" id="toggle-glyph-panel" title="Collapse">◀</div>
             <div class="panel-header">
                 <span>Glyphs</span>
                 <span id="glyph-count" class="badge">0</span>
@@ -76,6 +87,16 @@
                 <label class="toggle-label">
                     <input type="checkbox" id="tog-guides" checked> Guides
                 </label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="tog-handles"> Handles
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="tog-snap"> Snap
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="tog-rulers"> Rulers
+                </label>
+                <button class="icon-btn" id="add-guide-btn" title="Add guideline">📏</button>
             </div>
             <div class="canvas-wrap" id="canvas-wrap">
                 <svg id="glyph-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
@@ -93,7 +114,8 @@
         </section>
 
         <!-- Right: Properties Panel -->
-        <aside class="panel props-panel">
+        <aside class="panel props-panel" id="props-panel">
+            <div class="panel-toggle" id="toggle-props-panel" title="Collapse">▶</div>
             <div class="panel-header"><span>Properties</span></div>
             <div id="props-body" class="props-body">
                 <p class="empty-hint">Select a glyph</p>
@@ -110,10 +132,14 @@
                 <input type="range" id="preview-size" min="16" max="120" value="48">
                 <span id="preview-size-val">48px</span>
             </div>
+            <label class="toggle-label">
+                <input type="checkbox" id="tog-multi-preview"> Multi-size
+            </label>
         </div>
         <div id="preview-render" class="preview-render">
             Load a font to see preview
         </div>
+        <div id="multi-preview" class="multi-preview-row" style="display:none;"></div>
     </footer>
 
     <script src="editor.js"></script>

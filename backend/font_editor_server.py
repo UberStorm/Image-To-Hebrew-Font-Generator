@@ -978,6 +978,340 @@ def add_point_on_segment():
         return jsonify({'error': str(e)}), 500
 
 
+# ==================== v5 endpoints ====================
+
+@app.route('/api/export/<fmt>')
+def export_font_format(fmt):
+    """Export font as WOFF, WOFF2, or TTF."""
+    try:
+        font = editor_state['font']
+        if not font:
+            return jsonify({'error': 'No font loaded'}), 400
+
+        buf = io.BytesIO()
+        if fmt == 'woff':
+            font.flavor = 'woff'
+            font.save(buf)
+            font.flavor = None
+            mimetype = 'font/woff'
+            ext = 'woff'
+        elif fmt == 'woff2':
+            try:
+                font.flavor = 'woff2'
+                font.save(buf)
+                font.flavor = None
+                mimetype = 'font/woff2'
+                ext = 'woff2'
+            except Exception as e2:
+                font.flavor = None
+                return jsonify({'error': f'WOFF2 export failed (brotli installed?): {e2}'}), 500
+        elif fmt == 'ttf':
+            font.flavor = None
+            font.save(buf)
+            mimetype = 'font/ttf'
+            ext = 'ttf'
+        else:
+            return jsonify({'error': f'Unknown format: {fmt}'}), 400
+
+        data = buf.getvalue()
+        fname = editor_state.get('font_name', 'font') or 'font'
+        fname = fname.replace(' ', '_')
+        return Response(data, mimetype=mimetype, headers={
+            'Content-Disposition': f'attachment; filename="{fname}.{ext}"',
+            'Cache-Control': 'no-cache',
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/import-svg', methods=['POST'])
+def import_svg():
+    """Import SVG path data into a glyph, converting to TrueType points."""
+    import re, math
+    try:
+        font = editor_state['font']
+        if not font:
+            return jsonify({'error': 'No font loaded'}), 400
+
+        d = request.get_json()
+        name = d['glyph_name']
+        svg_d = d.get('svg_path', '').strip()
+        scale = float(d.get('scale', 1.0))
+        flip_y = d.get('flip_y', True)  # SVG Y is inverted vs font Y
+
+        if not svg_d:
+            return jsonify({'error': 'No SVG path data provided'}), 400
+
+        # Parse SVG path commands
+        tokens = re.findall(r'[MmLlHhVvCcSsQqTtAaZz]|[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?', svg_d)
+
+        coords = []
+        flags = []
+        endPts = []
+        cx, cy = 0, 0   # current point
+        sx, sy = 0, 0   # start of subpath
+        contour_start = 0
+        i = 0
+
+        def num():
+            nonlocal i
+            if i < len(tokens):
+                val = float(tokens[i]); i += 1
+                return val
+            return 0
+
+        while i < len(tokens):
+            cmd = tokens[i]
+            if cmd.isalpha():
+                i += 1
+            else:
+                cmd = prev_cmd  # implicit repeat
+
+            if cmd == 'M':
+                if coords and len(coords) > contour_start:
+                    endPts.append(len(coords) - 1)
+                    contour_start = len(coords)
+                cx, cy = num(), num()
+                sx, sy = cx, cy
+                coords.append([cx, cy]); flags.append(1)
+            elif cmd == 'm':
+                if coords and len(coords) > contour_start:
+                    endPts.append(len(coords) - 1)
+                    contour_start = len(coords)
+                cx += num(); cy += num()
+                sx, sy = cx, cy
+                coords.append([cx, cy]); flags.append(1)
+            elif cmd == 'L':
+                cx, cy = num(), num()
+                coords.append([cx, cy]); flags.append(1)
+            elif cmd == 'l':
+                cx += num(); cy += num()
+                coords.append([cx, cy]); flags.append(1)
+            elif cmd == 'H':
+                cx = num()
+                coords.append([cx, cy]); flags.append(1)
+            elif cmd == 'h':
+                cx += num()
+                coords.append([cx, cy]); flags.append(1)
+            elif cmd == 'V':
+                cy = num()
+                coords.append([cx, cy]); flags.append(1)
+            elif cmd == 'v':
+                cy += num()
+                coords.append([cx, cy]); flags.append(1)
+            elif cmd == 'Q':
+                qx, qy = num(), num()
+                cx, cy = num(), num()
+                coords.append([qx, qy]); flags.append(0)  # off-curve
+                coords.append([cx, cy]); flags.append(1)   # on-curve
+            elif cmd == 'q':
+                qx = cx + num(); qy = cy + num()
+                cx += num(); cy += num()
+                # Correct: qx/qy are relative to old cx,cy but we already moved
+                # Actually re-read: q is relative, so all vals relative to current
+                # Let me fix: q dx1 dy1 dx dy
+                # qx = cx_old + dx1, qy = cy_old + dy1, cx_new = cx_old + dx, cy_new = cy_old + dy
+                # We already computed qx = cx+num() and cx+=num(), but cx was updated by cx+=num()
+                # Need to fix ordering - let me redo this below
+                coords.append([qx, qy]); flags.append(0)
+                coords.append([cx, cy]); flags.append(1)
+            elif cmd == 'C':
+                # Cubic bezier — approximate with quadratic
+                c1x, c1y = num(), num()
+                c2x, c2y = num(), num()
+                ex, ey = num(), num()
+                # Simple cubic-to-quadratic: midpoint of c1,c2 as control
+                qx = (c1x + c2x) / 2
+                qy = (c1y + c2y) / 2
+                coords.append([qx, qy]); flags.append(0)
+                coords.append([ex, ey]); flags.append(1)
+                cx, cy = ex, ey
+            elif cmd == 'c':
+                c1x = cx + num(); c1y = cy + num()
+                c2x = cx + num(); c2y = cy + num()
+                ex = cx + num(); ey = cy + num()
+                qx = (c1x + c2x) / 2
+                qy = (c1y + c2y) / 2
+                coords.append([qx, qy]); flags.append(0)
+                coords.append([ex, ey]); flags.append(1)
+                cx, cy = ex, ey
+            elif cmd in ('Z', 'z'):
+                if len(coords) > contour_start:
+                    endPts.append(len(coords) - 1)
+                    contour_start = len(coords)
+                cx, cy = sx, sy
+            elif cmd == 'S':
+                # Smooth cubic
+                c2x, c2y = num(), num()
+                ex, ey = num(), num()
+                coords.append([c2x, c2y]); flags.append(0)
+                coords.append([ex, ey]); flags.append(1)
+                cx, cy = ex, ey
+            elif cmd == 's':
+                c2x = cx + num(); c2y = cy + num()
+                ex = cx + num(); ey = cy + num()
+                coords.append([c2x, c2y]); flags.append(0)
+                coords.append([ex, ey]); flags.append(1)
+                cx, cy = ex, ey
+            elif cmd == 'T':
+                cx, cy = num(), num()
+                coords.append([cx, cy]); flags.append(1)
+            elif cmd == 't':
+                cx += num(); cy += num()
+                coords.append([cx, cy]); flags.append(1)
+            elif cmd in ('A', 'a'):
+                # Arc — approximate as line to endpoint
+                num(); num(); num()  # rx, ry, rotation
+                num(); num()  # flags (large-arc, sweep)
+                if cmd == 'A':
+                    cx, cy = num(), num()
+                else:
+                    cx += num(); cy += num()
+                coords.append([cx, cy]); flags.append(1)
+            else:
+                i += 1  # skip unknown
+                continue
+
+            prev_cmd = cmd
+
+        # Close last contour
+        if len(coords) > contour_start:
+            endPts.append(len(coords) - 1)
+
+        if not coords:
+            return jsonify({'error': 'No points parsed from SVG path'}), 400
+
+        # Apply scale and Y-flip
+        upm = font['head'].unitsPerEm
+        asc = font['OS/2'].sTypoAscender if 'OS/2' in font else int(upm * 0.8)
+
+        for c in coords:
+            c[0] = round(c[0] * scale)
+            c[1] = round(c[1] * scale)
+            if flip_y:
+                c[1] = round(asc - c[1])
+
+        # Apply to glyph
+        glyf = font['glyf']
+        g = glyf[name]
+        _push_undo(name)
+
+        if not hasattr(g, 'numberOfContours') or g.numberOfContours <= 0 or g.coordinates is None:
+            # Set as new outline
+            g.coordinates = GlyphCoordinates([(c[0], c[1]) for c in coords])
+            g.flags = array.array('B', flags)
+            g.endPtsOfContours = endPts
+            g.numberOfContours = len(endPts)
+        else:
+            # Append to existing
+            offset = len(g.coordinates)
+            existing_coords = [[int(x), int(y)] for x, y in g.coordinates]
+            existing_flags = list(g.flags)
+            existing_endPts = list(g.endPtsOfContours)
+            existing_coords.extend(coords)
+            existing_flags.extend(flags)
+            for ep in endPts:
+                existing_endPts.append(ep + offset)
+            g.coordinates = GlyphCoordinates([(c[0], c[1]) for c in existing_coords])
+            g.flags = array.array('B', existing_flags)
+            g.endPtsOfContours = existing_endPts
+            g.numberOfContours = len(existing_endPts)
+
+        g.recalcBounds(glyf)
+        editor_state['modified'] = True
+        _invalidate()
+
+        return jsonify({
+            'status': 'success',
+            'glyph': _glyph_info(name),
+            'cache_version': _font_cache['version'],
+            'points_imported': len(coords),
+            'contours_imported': len(endPts),
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/kerning', methods=['GET'])
+def get_kerning():
+    """Get all kern pairs from the kern table."""
+    try:
+        font = editor_state['font']
+        if not font:
+            return jsonify({'error': 'No font loaded'}), 400
+
+        pairs = []
+        if 'kern' in font:
+            kern = font['kern']
+            for table in kern.kernTables:
+                if hasattr(table, 'kernTable'):
+                    for (left, right), value in table.kernTable.items():
+                        pairs.append({'left': left, 'right': right, 'value': value})
+
+        # Also get glyph chars for display
+        cmap = font.getBestCmap() or {}
+        rev = {v: k for k, v in cmap.items()}
+        glyph_chars = {}
+        for gn in font.getGlyphOrder():
+            cc = rev.get(gn, 0)
+            if cc > 31:
+                glyph_chars[gn] = chr(cc)
+
+        return jsonify({
+            'pairs': pairs,
+            'glyph_chars': glyph_chars,
+            'glyph_names': [g for g in font.getGlyphOrder() if g not in ('.notdef', '.null', 'NULL')],
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/kerning', methods=['POST'])
+def set_kerning():
+    """Set kern pairs in the kern table."""
+    try:
+        font = editor_state['font']
+        if not font:
+            return jsonify({'error': 'No font loaded'}), 400
+
+        d = request.get_json()
+        pairs = d.get('pairs', [])  # [{ left, right, value }, ...]
+
+        from fontTools.ttLib.tables._k_e_r_n import KernTable_format_0
+
+        if 'kern' not in font:
+            from fontTools.ttLib import newTable
+            kern = newTable('kern')
+            kern.version = 0
+            kern.kernTables = []
+            font['kern'] = kern
+
+        kern = font['kern']
+        # Create or update format 0 subtable
+        if kern.kernTables:
+            sub = kern.kernTables[0]
+        else:
+            sub = KernTable_format_0()
+            sub.version = 0
+            sub.coverage = 1  # horizontal
+            sub.kernTable = {}
+            kern.kernTables = [sub]
+
+        sub.kernTable = {}
+        for p in pairs:
+            if p['value'] != 0:
+                sub.kernTable[(p['left'], p['right'])] = int(p['value'])
+
+        editor_state['modified'] = True
+        _invalidate()
+
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # --------------- launch ---------------
 
 def _open_browser():

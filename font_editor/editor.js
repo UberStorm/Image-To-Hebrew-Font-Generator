@@ -1,7 +1,9 @@
 /* ============================================================
-   Hebrew Font Editor — Main Logic  v4
+   Hebrew Font Editor — Main Logic  v5
    Multi-select, Pen tool, Layers, Undo/Redo, Smooth, i18n
    Flip/Rotate, Copy/Paste, Context Menu, Metadata, Pan/Zoom
+   SVG Import, WOFF Export, Bezier Handles, Grid Snap, Rulers,
+   Custom Guidelines, Collapsible Panels, Kerning, Multi-Preview
    ============================================================ */
 (() => {
 'use strict';
@@ -137,6 +139,45 @@ const LANG = {
             metaSave: 'שמור מטאדטה',
             metaSaved: 'מטאדטה נשמר',
             metadata: '⚙ מטאדטה',
+            // v5 strings
+            importSvg: '📥 ייבוא SVG',
+            importSvgTitle: 'ייבוא נתיב SVG לגליף',
+            svgPathData: 'נתיב SVG (תוכן d):',
+            importSvgFile: 'או העלה קובץ SVG:',
+            importBtn: 'ייבוא',
+            importSuccess: 'SVG יובא בהצלחה',
+            importFailed: 'ייבוא SVG נכשל',
+            exportWoff: 'ייצוא WOFF',
+            exportWoff2: 'ייצוא WOFF2',
+            exportTtf: 'ייצוא TTF',
+            exportAs: 'ייצוא כ...',
+            exportSuccess: 'יוצא בהצלחה',
+            exportFailed: 'ייצוא נכשל',
+            showHandles: 'ידיות בזייה',
+            snapToGrid: 'הצמד לרשת',
+            gridSize: 'גודל רשת',
+            snapOn: 'הצמדה פעילה',
+            snapOff: 'הצמדה כבויה',
+            showRulers: 'סרגלים',
+            addGuide: 'הוסף קו עזר',
+            addHGuide: 'קו עזר אופקי',
+            addVGuide: 'קו עזר אנכי',
+            removeGuide: 'הסר קו עזר',
+            guidePos: 'מיקום קו עזר (יחידות פונט):',
+            kerning: 'ריווח',
+            kernPairs: 'זוגות ריווח',
+            kernValue: 'ערך',
+            addKernPair: 'הוסף זוג',
+            removeKernPair: 'הסר זוג',
+            kernSave: 'שמור ריווח',
+            kernSaved: 'ריווח נשמר',
+            kernLeft: 'שמאל',
+            kernRight: 'ימין',
+            noKernPairs: 'אין זוגות ריווח',
+            multiSizePreview: 'תצוגה מרובת גדלים',
+            collapsePanel: 'כווץ',
+            expandPanel: 'הרחב',
+            guideRemoved: 'קו עזר הוסר',
         },
         en: {
             title: 'Hebrew Font Editor',
@@ -262,6 +303,45 @@ const LANG = {
             metaSave: 'Save Metadata',
             metaSaved: 'Metadata saved',
             metadata: '⚙ Metadata',
+            // v5 strings
+            importSvg: '📥 Import SVG',
+            importSvgTitle: 'Import SVG Path to Glyph',
+            svgPathData: 'SVG Path (d attribute):',
+            importSvgFile: 'Or upload an SVG file:',
+            importBtn: 'Import',
+            importSuccess: 'SVG imported successfully',
+            importFailed: 'SVG import failed',
+            exportWoff: 'Export WOFF',
+            exportWoff2: 'Export WOFF2',
+            exportTtf: 'Export TTF',
+            exportAs: 'Export As...',
+            exportSuccess: 'Exported successfully',
+            exportFailed: 'Export failed',
+            showHandles: 'Bézier Handles',
+            snapToGrid: 'Snap to Grid',
+            gridSize: 'Grid Size',
+            snapOn: 'Snap enabled',
+            snapOff: 'Snap disabled',
+            showRulers: 'Rulers',
+            addGuide: 'Add Guideline',
+            addHGuide: 'Horizontal Guide',
+            addVGuide: 'Vertical Guide',
+            removeGuide: 'Remove Guide',
+            guidePos: 'Guide position (font units):',
+            kerning: 'Kerning',
+            kernPairs: 'Kern Pairs',
+            kernValue: 'Value',
+            addKernPair: 'Add Pair',
+            removeKernPair: 'Remove',
+            kernSave: 'Save Kerning',
+            kernSaved: 'Kerning saved',
+            kernLeft: 'Left',
+            kernRight: 'Right',
+            noKernPairs: 'No kern pairs',
+            multiSizePreview: 'Multi-size Preview',
+            collapsePanel: 'Collapse',
+            expandPanel: 'Expand',
+            guideRemoved: 'Guide removed',
         },
     },
 };
@@ -331,6 +411,19 @@ function applyLangToUI() {
     dom.previewText.placeholder = t('previewPlaceholder');
     const previewEmpty = dom.previewRender;
     if (!S.font && previewEmpty) previewEmpty.textContent = t('loadFontPreview');
+
+    // v5 toggle labels
+    const handleLabel = dom.toggleHandles.closest('.toggle-label');
+    if (handleLabel) handleLabel.childNodes[1].textContent = ' ' + t('showHandles');
+    const snapLabel = dom.toggleSnap.closest('.toggle-label');
+    if (snapLabel) snapLabel.childNodes[1].textContent = ' ' + t('snapToGrid');
+    const rulerLabel = dom.toggleRulers.closest('.toggle-label');
+    if (rulerLabel) rulerLabel.childNodes[1].textContent = ' ' + t('showRulers');
+    const multiPrevLabel = dom.toggleMultiPrev.closest('.toggle-label');
+    if (multiPrevLabel) multiPrevLabel.childNodes[1].textContent = ' ' + t('multiSizePreview');
+    dom.importSvgBtn.textContent = t('importSvg');
+    dom.kerningBtn.textContent = '⇔ ' + t('kerning');
+    dom.exportBtn.textContent = '📤 ' + t('exportAs');
 
     // Language switcher active state
     $$('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === LANG.current));
@@ -403,6 +496,14 @@ const S = {
 
     // Language
     lang: localStorage.getItem('fe-lang') || 'he',
+
+    // v5 features
+    showHandles: false,
+    snapToGrid: false,
+    gridSnapSize: 50,
+    showRulers: false,
+    customGuides: [],       // [{ axis: 'h'|'v', pos: number }]
+    multiPreview: false,
 };
 
 /* ---------- DOM ---------- */
@@ -445,6 +546,22 @@ function cacheDom() {
     dom.redoBtn        = $('#redo-btn');
     dom.modeDisp       = $('#mode-disp');
     dom.langBtns       = $$('.lang-btn');
+    // v5 DOM
+    dom.exportBtn      = $('#export-btn');
+    dom.exportMenu     = $('#export-menu');
+    dom.importSvgBtn   = $('#import-svg-btn');
+    dom.kerningBtn     = $('#kerning-btn');
+    dom.toggleHandles  = $('#tog-handles');
+    dom.toggleSnap     = $('#tog-snap');
+    dom.toggleRulers   = $('#tog-rulers');
+    dom.addGuideBtn    = $('#add-guide-btn');
+    dom.canvasWrap     = $('#canvas-wrap');
+    dom.glyphPanel     = $('#glyph-panel');
+    dom.propsPanel     = $('#props-panel');
+    dom.toggleGlyphPanel = $('#toggle-glyph-panel');
+    dom.togglePropsPanel = $('#toggle-props-panel');
+    dom.multiPreview   = $('#multi-preview');
+    dom.toggleMultiPrev= $('#tog-multi-preview');
 }
 
 /* ---------- Init ---------- */
@@ -499,6 +616,43 @@ function wireEvents() {
 
     window.addEventListener('beforeunload', e => {
         if (S.modified) { e.preventDefault(); e.returnValue = ''; }
+    });
+
+    // v5 events
+    dom.exportBtn.addEventListener('click', () => {
+        const m = dom.exportMenu;
+        m.style.display = m.style.display === 'none' ? 'block' : 'none';
+    });
+    document.addEventListener('click', e => {
+        if (!e.target.closest('.tb-dropdown')) dom.exportMenu.style.display = 'none';
+    });
+    $('#export-ttf').addEventListener('click', () => { exportFont('ttf'); dom.exportMenu.style.display = 'none'; });
+    $('#export-woff').addEventListener('click', () => { exportFont('woff'); dom.exportMenu.style.display = 'none'; });
+    $('#export-woff2').addEventListener('click', () => { exportFont('woff2'); dom.exportMenu.style.display = 'none'; });
+
+    dom.importSvgBtn.addEventListener('click', showImportSvgDialog);
+    dom.kerningBtn.addEventListener('click', showKerningEditor);
+
+    dom.toggleHandles.addEventListener('change', e => { S.showHandles = e.target.checked; redrawEditor(); });
+    dom.toggleSnap.addEventListener('change', e => {
+        S.snapToGrid = e.target.checked;
+        toast(e.target.checked ? t('snapOn') : t('snapOff'), 'ok');
+        redrawEditor();
+    });
+    dom.toggleRulers.addEventListener('change', e => {
+        S.showRulers = e.target.checked;
+        if (e.target.checked) setupRulers();
+        else removeRulers();
+    });
+    dom.addGuideBtn.addEventListener('click', showAddGuideDialog);
+
+    dom.toggleGlyphPanel.addEventListener('click', () => togglePanel('glyph'));
+    dom.togglePropsPanel.addEventListener('click', () => togglePanel('props'));
+
+    dom.toggleMultiPrev.addEventListener('change', e => {
+        S.multiPreview = e.target.checked;
+        dom.multiPreview.style.display = e.target.checked ? 'flex' : 'none';
+        if (e.target.checked) renderMultiPreview();
     });
 }
 
@@ -707,6 +861,8 @@ function redrawEditor() {
     dom.svg.innerHTML = '';
 
     if (S.showGuides) drawGuides(g, aw, asc, desc, vbX, vbW);
+    if (S.snapToGrid) drawSnapGrid(g, aw, asc, desc, vbX, vbW);
+    if (S.customGuides.length > 0 && S.showGuides) drawCustomGuides(g, aw, asc, desc, vbX, vbW);
 
     // Draw layers / paths
     const layers = S.layers[S.sel] || [];
@@ -837,8 +993,55 @@ function drawPoints(g) {
         c.setAttribute('data-idx', i);
         c.classList.add('ctrl-point');
         if (selected) c.classList.add('selected');
+
+        // Hover enlarge (replaces CSS r: 6 which doesn't work cross-browser)
+        c.addEventListener('mouseenter', () => {
+            if (on) c.setAttribute('r', ptR * 1.5);
+            else { c.setAttribute('width', ptR * 3); c.setAttribute('height', ptR * 3);
+                   c.setAttribute('x', pts[i][0] - ptR * 1.5); c.setAttribute('y', pts[i][1] - ptR * 1.5); }
+        });
+        c.addEventListener('mouseleave', () => {
+            if (on) c.setAttribute('r', ptR);
+            else { c.setAttribute('width', ptR * 2); c.setAttribute('height', ptR * 2);
+                   c.setAttribute('x', pts[i][0] - ptR); c.setAttribute('y', pts[i][1] - ptR); }
+        });
+
         ptGroup.appendChild(c);
     }
+
+    // Bezier handle lines: draw dashed lines from off-curve to neighboring on-curve points
+    if (S.showHandles) {
+        start = 0;
+        for (const end of endPts) {
+            const cLen = end - start + 1;
+            for (let i = start; i <= end; i++) {
+                if (flags[i] === 0) { // off-curve
+                    const prevIdx = i === start ? end : i - 1;
+                    const nextIdx = i === end ? start : i + 1;
+                    // Draw handle to previous on-curve
+                    if (flags[prevIdx] === 1) {
+                        ptGroup.appendChild(createSvg('line', {
+                            x1: pts[i][0], y1: pts[i][1],
+                            x2: pts[prevIdx][0], y2: pts[prevIdx][1],
+                            class: 'handle-line',
+                            'stroke-width': r * 0.4,
+                        }));
+                    }
+                    // Draw handle to next on-curve
+                    if (flags[nextIdx] === 1) {
+                        ptGroup.appendChild(createSvg('line', {
+                            x1: pts[i][0], y1: pts[i][1],
+                            x2: pts[nextIdx][0], y2: pts[nextIdx][1],
+                            class: 'handle-line',
+                            'stroke-width': r * 0.4,
+                        }));
+                    }
+                }
+            }
+            start = end + 1;
+        }
+    }
+
     dom.svg.appendChild(ptGroup);
 }
 
@@ -1017,7 +1220,7 @@ function onSvgMove(e) {
             return;
         }
 
-        S.localPoints[S.dragIdx] = [Math.round(sv.x), Math.round(-sv.y)];
+        S.localPoints[S.dragIdx] = [snapVal(Math.round(sv.x)), snapVal(Math.round(-sv.y))];
         updateLocalVisuals();
         const p = S.localPoints[S.dragIdx];
         dom.infoCoord.textContent = `pt${S.dragIdx}: (${p[0]}, ${p[1]})`;
@@ -1034,7 +1237,7 @@ function onSvgMove(e) {
 
         for (const idx of S.selectedPts) {
             const orig = S.multiDragOrigCoords[idx];
-            S.localPoints[idx] = [Math.round(orig[0] + dx), Math.round(orig[1] + dy)];
+            S.localPoints[idx] = [snapVal(Math.round(orig[0] + dx)), snapVal(Math.round(orig[1] + dy))];
         }
         updateLocalVisuals();
         dom.infoCoord.textContent = `${t('movingPts', S.selectedPts.size)}  Δ(${Math.round(dx)}, ${Math.round(dy)})`;
@@ -1274,6 +1477,7 @@ function reapplyViewBox() {
     dom.svg.setAttribute('viewBox', `${vbX} ${vbY} ${w} ${h}`);
     dom.svg.style.transform = '';
     dom.svg.style.transformOrigin = '';
+    if (S.showRulers) drawRulers();
 }
 
 /* ---------- Properties Panel ---------- */
@@ -1592,6 +1796,7 @@ function renderPreviewText() {
         if (cmap[ch]) { span.title = cmap[ch]; span.addEventListener('click', () => selectGlyph(cmap[ch])); }
         dom.previewRender.appendChild(span);
     }
+    if (S.multiPreview) renderMultiPreview();
 }
 
 /* ---------- Save ---------- */
@@ -2330,6 +2535,452 @@ function buildPathFromPoints(coords, flags, endPts) {
         start = end + 1;
     }
     return d;
+}
+
+/* ========== v5: Snap Helper ========== */
+function snapVal(v) {
+    if (!S.snapToGrid) return v;
+    const gs = S.gridSnapSize;
+    return Math.round(v / gs) * gs;
+}
+
+/* ========== v5: Snap Grid Overlay ========== */
+function drawSnapGrid(g, aw, asc, desc, vbX, vbW) {
+    const gs = S.gridSnapSize;
+    const gridG = createSvg('g', { class: 'snap-grid' });
+    const yMin = desc - 100;
+    const yMax = asc + 100;
+
+    for (let x = 0; x <= aw + gs; x += gs) {
+        const isMajor = x % (gs * 4) === 0;
+        gridG.appendChild(createSvg('line', {
+            x1: x, x2: x, y1: -yMax, y2: -yMin,
+            class: 'grid-line' + (isMajor ? ' major' : ''),
+        }));
+    }
+    for (let y = Math.floor(yMin / gs) * gs; y <= yMax; y += gs) {
+        const isMajor = y % (gs * 4) === 0;
+        gridG.appendChild(createSvg('line', {
+            x1: vbX, x2: vbX + vbW, y1: -y, y2: -y,
+            class: 'grid-line' + (isMajor ? ' major' : ''),
+        }));
+    }
+    dom.svg.appendChild(gridG);
+}
+
+/* ========== v5: Custom Guidelines ========== */
+function drawCustomGuides(g, aw, asc, desc, vbX, vbW) {
+    const cg = createSvg('g', { class: 'custom-guides-layer' });
+    const sw = Math.max(0.5, (aw + 100) / 800);
+
+    S.customGuides.forEach((guide, idx) => {
+        if (guide.axis === 'h') {
+            const line = createSvg('line', {
+                x1: vbX, x2: vbX + vbW, y1: -guide.pos, y2: -guide.pos,
+                class: 'custom-guide', 'data-guide-idx': idx,
+            });
+            line.addEventListener('dblclick', e => {
+                e.stopPropagation();
+                S.customGuides.splice(idx, 1);
+                redrawEditor();
+                toast(t('guideRemoved'), 'ok');
+            });
+            cg.appendChild(line);
+        } else {
+            const line = createSvg('line', {
+                x1: guide.pos, x2: guide.pos, y1: -asc - 20, y2: -desc + 20,
+                class: 'custom-guide', 'data-guide-idx': idx,
+            });
+            line.addEventListener('dblclick', e => {
+                e.stopPropagation();
+                S.customGuides.splice(idx, 1);
+                redrawEditor();
+                toast(t('guideRemoved'), 'ok');
+            });
+            cg.appendChild(line);
+        }
+    });
+    dom.svg.appendChild(cg);
+}
+
+/* ========== v5: Rulers ========== */
+function setupRulers() {
+    removeRulers();
+    dom.canvasWrap.classList.add('has-rulers');
+
+    // Corner
+    const corner = document.createElement('div');
+    corner.className = 'ruler-corner';
+    dom.canvasWrap.appendChild(corner);
+
+    // Horizontal ruler
+    const rh = document.createElement('div');
+    rh.className = 'ruler ruler-h';
+    rh.id = 'ruler-h';
+    const ch = document.createElement('canvas');
+    rh.appendChild(ch);
+    dom.canvasWrap.appendChild(rh);
+
+    // Vertical ruler
+    const rv = document.createElement('div');
+    rv.className = 'ruler ruler-v';
+    rv.id = 'ruler-v';
+    const cv = document.createElement('canvas');
+    rv.appendChild(cv);
+    dom.canvasWrap.appendChild(rv);
+
+    drawRulers();
+}
+
+function removeRulers() {
+    dom.canvasWrap.classList.remove('has-rulers');
+    const old = dom.canvasWrap.querySelectorAll('.ruler, .ruler-corner');
+    old.forEach(el => el.remove());
+}
+
+function drawRulers() {
+    if (!S.showRulers || !S.sel) return;
+    const rh = document.getElementById('ruler-h');
+    const rv = document.getElementById('ruler-v');
+    if (!rh || !rv) return;
+
+    const chCanvas = rh.querySelector('canvas');
+    const cvCanvas = rv.querySelector('canvas');
+    if (!chCanvas || !cvCanvas) return;
+
+    const vb = dom.svg.viewBox.baseVal;
+    if (!vb || vb.width === 0) return;
+
+    // Horizontal
+    chCanvas.width = rh.clientWidth;
+    chCanvas.height = rh.clientHeight;
+    const ctxH = chCanvas.getContext('2d');
+    ctxH.fillStyle = '#1e1e2e';
+    ctxH.fillRect(0, 0, chCanvas.width, chCanvas.height);
+    ctxH.fillStyle = '#ccc';
+    ctxH.font = '9px monospace';
+
+    const pxPerUnit = chCanvas.width / vb.width;
+    const step = rulerStep(pxPerUnit);
+
+    const startX = Math.floor(vb.x / step) * step;
+    for (let u = startX; u < vb.x + vb.width; u += step) {
+        const px = (u - vb.x) * pxPerUnit;
+        ctxH.fillRect(px, 16, 1, 8);
+        if (u % (step * 5) === 0 || step >= 100) {
+            ctxH.fillText(Math.round(u).toString(), px + 2, 12);
+            ctxH.fillRect(px, 10, 1, 14);
+        }
+    }
+
+    // Vertical
+    cvCanvas.width = rv.clientWidth;
+    cvCanvas.height = rv.clientHeight;
+    const ctxV = cvCanvas.getContext('2d');
+    ctxV.fillStyle = '#1e1e2e';
+    ctxV.fillRect(0, 0, cvCanvas.width, cvCanvas.height);
+    ctxV.fillStyle = '#ccc';
+    ctxV.font = '8px monospace';
+
+    const pxPerUnitV = cvCanvas.height / vb.height;
+    const stepV = rulerStep(pxPerUnitV);
+
+    const startY = Math.floor(vb.y / stepV) * stepV;
+    for (let u = startY; u < vb.y + vb.height; u += stepV) {
+        const py = (u - vb.y) * pxPerUnitV;
+        ctxV.fillRect(16, py, 8, 1);
+        if (u % (stepV * 5) === 0 || stepV >= 100) {
+            ctxV.save();
+            ctxV.translate(10, py + 2);
+            ctxV.rotate(-Math.PI / 2);
+            ctxV.fillText(Math.round(-u).toString(), 0, 0);
+            ctxV.restore();
+            ctxV.fillRect(10, py, 14, 1);
+        }
+    }
+}
+
+function rulerStep(pxPerUnit) {
+    const targets = [10, 20, 50, 100, 200, 500, 1000];
+    for (const s of targets) {
+        if (s * pxPerUnit >= 25) return s;
+    }
+    return 1000;
+}
+
+/* ========== v5: Add Guideline Dialog ========== */
+function showAddGuideDialog() {
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    overlay.innerHTML = `
+        <div class="dialog-box">
+            <h3>${t('addGuide')}</h3>
+            <div class="prop-row" style="margin:8px 0">
+                <label>${t('guidePos')}</label>
+                <input type="number" id="guide-pos" value="0" step="10" style="width:100px">
+            </div>
+            <div class="dialog-actions">
+                <button class="tb-btn" id="guide-h-btn">${t('addHGuide')}</button>
+                <button class="tb-btn" id="guide-v-btn">${t('addVGuide')}</button>
+                <button class="tb-btn" id="guide-cancel">${t('cancel')}</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('#guide-cancel').onclick = () => overlay.remove();
+    overlay.querySelector('#guide-h-btn').onclick = () => {
+        const pos = parseInt(overlay.querySelector('#guide-pos').value) || 0;
+        S.customGuides.push({ axis: 'h', pos });
+        redrawEditor();
+        overlay.remove();
+    };
+    overlay.querySelector('#guide-v-btn').onclick = () => {
+        const pos = parseInt(overlay.querySelector('#guide-pos').value) || 0;
+        S.customGuides.push({ axis: 'v', pos });
+        redrawEditor();
+        overlay.remove();
+    };
+    overlay.querySelector('#guide-pos').focus();
+}
+
+/* ========== v5: Panel Toggle ========== */
+function togglePanel(which) {
+    if (which === 'glyph') {
+        dom.glyphPanel.classList.toggle('collapsed');
+        const collapsed = dom.glyphPanel.classList.contains('collapsed');
+        dom.toggleGlyphPanel.textContent = collapsed ? '▶' : '◀';
+        dom.toggleGlyphPanel.title = collapsed ? t('expandPanel') : t('collapsePanel');
+    } else {
+        dom.propsPanel.classList.toggle('collapsed');
+        const collapsed = dom.propsPanel.classList.contains('collapsed');
+        dom.togglePropsPanel.textContent = collapsed ? '◀' : '▶';
+        dom.togglePropsPanel.title = collapsed ? t('expandPanel') : t('collapsePanel');
+    }
+}
+
+/* ========== v5: Export Font ========== */
+async function exportFont(format) {
+    if (!S.font) { toast(t('noFontErr'), 'error'); return; }
+    try {
+        const res = await fetch(`/api/export/${format}`);
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+            toast(t('exportFailed') + ': ' + (err.error || ''), 'error');
+            return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${S.font.font_name || 'font'}.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast(t('exportSuccess') + ` (${format.toUpperCase()})`, 'ok');
+    } catch (err) {
+        toast(t('exportFailed') + ': ' + err.message, 'error');
+    }
+}
+
+/* ========== v5: Import SVG Dialog ========== */
+function showImportSvgDialog() {
+    if (!S.font) { toast(t('noFontErr'), 'error'); return; }
+    if (!S.sel) { toast(t('selectGlyphProps'), 'error'); return; }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    overlay.innerHTML = `
+        <div class="dialog-box" style="min-width:450px">
+            <h3>${t('importSvgTitle')}</h3>
+            <div style="margin:8px 0">
+                <label>${t('svgPathData')}</label>
+                <textarea id="svg-path-input" class="svg-import-textarea" placeholder="M 0 0 L 100 0 L 100 100 Z"></textarea>
+            </div>
+            <div style="margin:8px 0">
+                <label>${t('importSvgFile')}</label>
+                <input type="file" id="svg-file-input" accept=".svg" style="margin-top:4px">
+            </div>
+            <div class="prop-row" style="margin:8px 0">
+                <label>Scale:</label>
+                <input type="number" id="svg-scale" value="1" step="0.1" min="0.1" style="width:80px">
+                <label style="margin-left:12px">
+                    <input type="checkbox" id="svg-flipy" checked> Flip Y
+                </label>
+            </div>
+            <div class="dialog-actions">
+                <button class="tb-btn" id="svg-cancel">${t('cancel')}</button>
+                <button class="tb-btn tb-save" id="svg-import-ok">${t('importBtn')}</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+
+    const fileInput = overlay.querySelector('#svg-file-input');
+    const textArea = overlay.querySelector('#svg-path-input');
+
+    fileInput.addEventListener('change', () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = e => {
+            const svgText = e.target.result;
+            // Extract path d attribute from SVG content
+            const match = svgText.match(/\bd="([^"]+)"/);
+            if (match) {
+                textArea.value = match[1];
+            } else {
+                toast('No path found in SVG file', 'error');
+            }
+        };
+        reader.readAsText(file);
+    });
+
+    overlay.querySelector('#svg-cancel').onclick = () => overlay.remove();
+    overlay.querySelector('#svg-import-ok').onclick = async () => {
+        const pathData = textArea.value.trim();
+        if (!pathData) { toast('Enter SVG path data', 'error'); return; }
+
+        const scale = parseFloat(overlay.querySelector('#svg-scale').value) || 1;
+        const flipY = overlay.querySelector('#svg-flipy').checked;
+
+        try {
+            const r = await api('/api/import-svg', {
+                glyph_name: S.sel,
+                svg_path: pathData,
+                scale,
+                flip_y: flipY,
+            });
+            if (r.status === 'success' && r.glyph) {
+                Object.assign(S.glyphMap[S.sel], r.glyph);
+                if (r.glyph.points) S.layers[S.sel] = buildLayersFromPoints(r.glyph.points);
+                S.cacheVer = r.cache_version || S.cacheVer;
+                markModified();
+                redrawEditor(); updateGridCell(S.sel);
+                await refreshFontFace(); renderPreviewText(); renderProps();
+                toast(`${t('importSuccess')} (${r.points_imported} pts, ${r.contours_imported} contours)`, 'ok');
+            } else {
+                toast(t('importFailed') + ': ' + (r.error || ''), 'error');
+            }
+        } catch (err) {
+            toast(t('importFailed') + ': ' + err.message, 'error');
+        }
+        overlay.remove();
+    };
+    textArea.focus();
+}
+
+/* ========== v5: Kerning Editor ========== */
+async function showKerningEditor() {
+    if (!S.font) { toast(t('noFontErr'), 'error'); return; }
+
+    let data;
+    try {
+        data = await api('/api/kerning');
+    } catch (err) { toast(t('editFailed'), 'error'); return; }
+
+    const pairs = data.pairs || [];
+    const chars = data.glyph_chars || {};
+    const names = data.glyph_names || [];
+
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+
+    function renderPairRows() {
+        let html = '';
+        if (pairs.length === 0) {
+            html = `<p class="empty-hint">${t('noKernPairs')}</p>`;
+        }
+        for (let i = 0; i < pairs.length; i++) {
+            const p = pairs[i];
+            html += `
+                <div class="kern-pair-row" data-ki="${i}">
+                    <span class="kern-glyph">${chars[p.left] || p.left}</span>
+                    <span class="info-dim">${p.left}</span>
+                    <span>↔</span>
+                    <span class="kern-glyph">${chars[p.right] || p.right}</span>
+                    <span class="info-dim">${p.right}</span>
+                    <input type="number" class="kern-value-input" data-ki="${i}" value="${p.value}" step="10">
+                    <button class="kern-del-btn" data-ki="${i}" title="${t('removeKernPair')}">✕</button>
+                </div>`;
+        }
+        return html;
+    }
+
+    function buildOptions() {
+        return names.map(n => `<option value="${n}">${chars[n] || ''} ${n}</option>`).join('');
+    }
+
+    overlay.innerHTML = `
+        <div class="dialog-box kern-dialog">
+            <h3>⇔ ${t('kernPairs')}</h3>
+            <div id="kern-pairs-list">${renderPairRows()}</div>
+            <div class="kern-add-row">
+                <select id="kern-left">${buildOptions()}</select>
+                <span>↔</span>
+                <select id="kern-right">${buildOptions()}</select>
+                <input type="number" id="kern-new-val" value="-50" step="10" style="width:70px">
+                <button class="tb-btn" id="kern-add-btn">${t('addKernPair')}</button>
+            </div>
+            <div class="dialog-actions" style="margin-top:12px">
+                <button class="tb-btn" id="kern-cancel">${t('cancel')}</button>
+                <button class="tb-btn tb-save" id="kern-save">${t('kernSave')}</button>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+
+    // Wire events
+    overlay.addEventListener('change', e => {
+        if (e.target.classList.contains('kern-value-input')) {
+            const idx = parseInt(e.target.dataset.ki);
+            pairs[idx].value = parseInt(e.target.value) || 0;
+        }
+    });
+
+    overlay.addEventListener('click', e => {
+        if (e.target.classList.contains('kern-del-btn')) {
+            const idx = parseInt(e.target.dataset.ki);
+            pairs.splice(idx, 1);
+            overlay.querySelector('#kern-pairs-list').innerHTML = renderPairRows();
+        }
+    });
+
+    overlay.querySelector('#kern-add-btn').addEventListener('click', () => {
+        const left = overlay.querySelector('#kern-left').value;
+        const right = overlay.querySelector('#kern-right').value;
+        const val = parseInt(overlay.querySelector('#kern-new-val').value) || -50;
+        if (left && right) {
+            pairs.push({ left, right, value: val });
+            overlay.querySelector('#kern-pairs-list').innerHTML = renderPairRows();
+        }
+    });
+
+    overlay.querySelector('#kern-cancel').onclick = () => overlay.remove();
+    overlay.querySelector('#kern-save').onclick = async () => {
+        try {
+            const r = await api('/api/kerning', { pairs });
+            if (r.status === 'success') {
+                markModified();
+                toast(t('kernSaved'), 'ok');
+            }
+        } catch (err) { toast(t('editFailed'), 'error'); }
+        overlay.remove();
+    };
+}
+
+/* ========== v5: Multi-Size Preview ========== */
+function renderMultiPreview() {
+    if (!S.multiPreview || !S.font) return;
+    const text = dom.previewText.value || 'שלום';
+    const sizes = [12, 16, 24, 36, 48, 72, 96];
+    let html = '';
+    for (const sz of sizes) {
+        html += `
+            <div class="multi-preview-item">
+                <span class="size-label">${sz}px</span>
+                <span class="preview-text" style="font-size:${sz}px;font-family:${dom.previewRender.style.fontFamily || 'serif'}">${text}</span>
+            </div>`;
+    }
+    dom.multiPreview.innerHTML = html;
 }
 
 })();
