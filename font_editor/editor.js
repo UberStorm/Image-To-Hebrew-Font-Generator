@@ -2909,7 +2909,7 @@ async function handleImportImage(e) {
     formData.append('glyph_name', S.sel);
 
     try {
-        const r = await fetch(BASE + '/api/import-image', {
+        const r = await fetch('/api/import-image', {
             method: 'POST',
             body: formData,
         }).then(res => res.json());

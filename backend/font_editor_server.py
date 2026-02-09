@@ -1337,14 +1337,14 @@ def api_import_image():
 
         try:
             # Import image processor
-            sys.path.insert(0, _project_root)
+            if _project_root not in sys.path:
+                sys.path.insert(0, _project_root)
             from backend.image_processor import LetterDetector
-            from backend.font_generator import FontGenerator
 
             detector = LetterDetector()
             original_img = detector.load_image(tmp_path)
             binary = detector.preprocess_image(original_img, separation_level=0)
-            
+
             # Detect contours from image
             letters = detector.detect_letters(tmp_path, separation_level=0)
 
@@ -1356,53 +1356,101 @@ def api_import_image():
 
             # Extract contours from original image
             contours = detector.extract_glyph_contours(
-                binary, 
-                letter['bbox'], 
-                padding=4, 
+                binary,
+                letter['bbox'],
+                padding=4,
                 original_image=original_img
             )
 
             if not contours:
                 return jsonify({'error': 'Failed to extract contour'}), 400
 
-            # Convert to format expected by FontGenerator
-            contour_data = {
-                'bbox': letter['bbox'],
-                'contours': contours,
-                'width': letter['bbox'][2],
-                'height': letter['bbox'][3]
-            }
+            # Convert contours to TrueType points directly using TTGlyphPen
+            from fontTools.pens.ttGlyphPen import TTGlyphPen
 
-            # Convert to TrueType points
-            generator = FontGenerator()
-            glyph_info = generator._create_glyph(contour_data, units_per_em=1024)
+            src_w = letter['bbox'][2]
+            src_h = letter['bbox'][3]
+
+            # Scale to fit within ~750 units vertically (standard glyph height)
+            target_h = 750
+            scale = target_h / src_h if src_h > 0 else 1
+            lsb = 50  # left side bearing
+
+            pen = TTGlyphPen(glyphSet=None)
+            has_contour = False
+
+            for contour in contours:
+                pts = contour['points']
+                if len(pts) < 4:
+                    continue
+
+                # Convert to font coordinates: scale and flip Y
+                font_pts = []
+                for px, py in pts:
+                    fx = round(px * scale) + lsb
+                    fy = round((src_h - py) * scale)
+                    font_pts.append((fx, fy))
+
+                n = len(font_pts)
+
+                if n >= 6:
+                    # Quadratic B-spline: all points as off-curve controls
+                    ctrls = font_pts
+                    start = (round((ctrls[-1][0] + ctrls[0][0]) / 2),
+                             round((ctrls[-1][1] + ctrls[0][1]) / 2))
+                    pen.moveTo(start)
+                    for i in range(len(ctrls)):
+                        ctrl = ctrls[i]
+                        nc = ctrls[(i + 1) % len(ctrls)]
+                        end = (round((ctrl[0] + nc[0]) / 2),
+                               round((ctrl[1] + nc[1]) / 2))
+                        pen.qCurveTo(ctrl, end)
+                    pen.closePath()
+                    has_contour = True
+                else:
+                    # Small contours: straight lines
+                    pen.moveTo(font_pts[0])
+                    for pt in font_pts[1:]:
+                        pen.lineTo(pt)
+                    pen.closePath()
+                    has_contour = True
+
+            if not has_contour:
+                return jsonify({'error': 'No valid contours to import'}), 400
 
             _push_undo(glyph_name)
+
+            glyph = pen.glyph()
 
             glyf = font['glyf']
             g = glyf[glyph_name]
 
-            if glyph_info['coordinates'] and len(glyph_info['coordinates']) > 0:
-                g.coordinates = GlyphCoordinates(glyph_info['coordinates'])
-                g.flags = array.array('B', glyph_info['flags'])
-                g.endPtsOfContours = glyph_info['end_pts']
-                g.numberOfContours = len(glyph_info['end_pts'])
-                g.recalcBounds(glyf)
+            # Apply the new glyph data
+            g.coordinates = glyph.coordinates
+            g.flags = glyph.flags
+            g.endPtsOfContours = glyph.endPtsOfContours
+            g.numberOfContours = glyph.numberOfContours
+            if hasattr(glyph, 'program'):
+                g.program = glyph.program
+            g.recalcBounds(glyf)
 
             # Update advance width
-            if 'advance_width' in glyph_info:
-                font['hmtx'][glyph_name] = (glyph_info['advance_width'], glyph_info.get('lsb', 0))
+            advance_width = round(src_w * scale) + lsb * 2
+            font['hmtx'][glyph_name] = (advance_width, lsb)
 
             editor_state['modified'] = True
             _invalidate()
 
             snap = _snapshot_glyph(glyph_name)
+            total_pts = len(glyph.coordinates) if glyph.coordinates else 0
+            total_contours = glyph.numberOfContours if glyph.numberOfContours else 0
+
             return jsonify({
                 'status': 'success',
                 'glyph': snap,
                 'cache_version': _font_cache['version'],
-                'points_imported': len(glyph_info['coordinates']) if glyph_info['coordinates'] else 0,
-                'contours_imported': len(glyph_info['end_pts'])
+                'points_imported': total_pts,
+                'contours_imported': total_contours
             })
 
         finally:
