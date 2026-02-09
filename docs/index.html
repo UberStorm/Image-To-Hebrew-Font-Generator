@@ -225,6 +225,24 @@
         .step h4 { margin-bottom: 0.2rem; font-weight: 600; font-size: 0.9rem; }
         .step p { color: var(--text-dim); font-size: 0.82rem; }
 
+        /* ── Use cases ── */
+        .usecases-section { background: var(--bg-card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 5rem 2rem; }
+        .usecases-inner { max-width: 1100px; margin: 0 auto; }
+        .usecases-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.1rem; margin-top: 2rem;
+        }
+        .usecase {
+            background: var(--bg); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 1.4rem;
+            text-align: center; transition: border-color 0.2s;
+        }
+        .usecase:hover { border-color: var(--accent); }
+        .usecase .uc-icon { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
+        .usecase h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .usecase p { color: var(--text-dim); font-size: 0.82rem; line-height: 1.5; }
+
         /* ── CTA ── */
         .cta {
             text-align: center; padding: 4rem 2rem;
@@ -278,10 +296,7 @@
         <h1>הפכו תמונה ל<span class="gradient">פונט עברי</span></h1>
         <p>מעלים תמונה עם אותיות — המערכת מזהה אותן אוטומטית, אתם משייכים כל צורה לאות, מכווננים, ומקבלים קובץ פונט מוכן. רוצים לערוך פונט קיים? יש לנו גם עורך ויזואלי.</p>
         <div class="hero-buttons">
-            <a href="https://github.com/UberStorm/Image-To-Hebrew-Font-Generator" target="_blank" class="btn btn-primary">
-                <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-                לקוד המקור ב-GitHub
-            </a>
+            <a href="#install" class="btn btn-primary">להתקנה ⬇</a>
             <a href="#generator" class="btn btn-outline">ראו איך זה עובד ⬇</a>
         </div>
     </div>
@@ -365,6 +380,47 @@
         </div>
     </div>
 </section>
+
+<!-- ═══ USE CASES ═══ -->
+<div class="usecases-section">
+    <div class="usecases-inner">
+        <span class="section-label">למי זה מתאים?</span>
+        <h2 class="section-title">🎯 שימושים לדוגמה</h2>
+        <p class="section-desc">כמה מהדברים שאפשר לעשות עם הכלים האלה</p>
+        <div class="usecases-grid">
+            <div class="usecase">
+                <span class="uc-icon">✍️</span>
+                <h4>כתב יד → פונט</h4>
+                <p>צלמו את כתב היד שלכם על דף, העלו את התמונה — וקבלו פונט אמיתי מכתב היד שלכם</p>
+            </div>
+            <div class="usecase">
+                <span class="uc-icon">🤖</span>
+                <h4>פונט AI → TTF</h4>
+                <p>יצרתם פונט במחולל תמונות AI? המירו אותו לקובץ פונט אמיתי שעובד בכל תוכנה</p>
+            </div>
+            <div class="usecase">
+                <span class="uc-icon">🎬</span>
+                <h4>פונט לפרויקט</h4>
+                <p>צריכים פונט מיוחד לסרטון, למשחק, לאפליקציה או לאתר? צרו אותו בדיוק כמו שאתם רוצים</p>
+            </div>
+            <div class="usecase">
+                <span class="uc-icon">📚</span>
+                <h4>למידה והוראה</h4>
+                <p>מלמדים טיפוגרפיה? תן לתלמידים לעצב פונט מאפס ולהבין איך הוא בנוי</p>
+            </div>
+            <div class="usecase">
+                <span class="uc-icon">🎨</span>
+                <h4>עיצוב גרפי</h4>
+                <p>מעצבים גרפיים שרוצים פונט עברי מותאם אישית? ציירו אותו בלי להזדקק לתוכנות עריכה</p>
+            </div>
+            <div class="usecase">
+                <span class="uc-icon">✂️</span>
+                <h4>תיקון פונט קיים</h4>
+                <p>יש לכם פונט TTF שצריך תיקונים? פתחו אותו בעורך ושפרו נקודות, עגלו פינות, ציירו</p>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- ═══ EDITOR ═══ -->
 <section id="editor">
