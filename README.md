@@ -1,8 +1,10 @@
 <div dir="rtl">
 
-# 🔤 Image to Hebrew Font Generator + ✏️ Font Editor
+# 🔤 Image to Hebrew Font + ✏️ Font Editor
 
 **סט כלים מלא ליצירה ועריכה של פונטים עבריים**
+
+🌐 **[אתר הפרויקט](https://uberstorm.github.io/Image-To-Hebrew-Font-Generator/)**
 
 שני כלים משלימים:
 1. **Font Generator** — יוצר פונט TTF מתמונת AI: זיהוי אוטומטי של אותיות, שיוך, כוונון ויצירת קובץ TTF
