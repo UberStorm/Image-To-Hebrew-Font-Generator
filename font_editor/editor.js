@@ -178,6 +178,15 @@ const LANG = {
             collapsePanel: 'כווץ',
             expandPanel: 'הרחב',
             guideRemoved: 'קו עזר הוסר',
+            flipHBtn: 'הפוך אופקי (H)',
+            flipVBtn: 'הפוך אנכי (Shift+H)',
+            importImage: '🖼️ ייבוא תמונה',
+            importImgTitle: 'ייבוא תמונה לגליף',
+            importImgSuccess: 'תמונה יובאה בהצלחה',
+            importImgFailed: 'ייבוא תמונה נכשל',
+            importImgDesc: 'העלה תמונה של אות/תו (PNG/JPG) והמערכת תמיר אותה לקונטורים:',
+            append: 'הוסף לקונטור קיים',
+            replace: 'החלף קונטור',
         },
         en: {
             title: 'Hebrew Font Editor',
@@ -342,6 +351,15 @@ const LANG = {
             collapsePanel: 'Collapse',
             expandPanel: 'Expand',
             guideRemoved: 'Guide removed',
+            flipHBtn: 'Flip Horizontal (H)',
+            flipVBtn: 'Flip Vertical (Shift+H)',
+            importImage: '🖼️ Import Image',
+            importImgTitle: 'Import Image to Glyph',
+            importImgSuccess: 'Image imported successfully',
+            importImgFailed: 'Image import failed',
+            importImgDesc: 'Upload an image of a letter/character (PNG/JPG) and the system will convert it to contours:',
+            append: 'Append to existing',
+            replace: 'Replace contour',
         },
     },
 };
@@ -424,6 +442,9 @@ function applyLangToUI() {
     dom.importSvgBtn.textContent = t('importSvg');
     dom.kerningBtn.textContent = '⇔ ' + t('kerning');
     dom.exportBtn.textContent = '📤 ' + t('exportAs');
+    dom.flipHBtn.title = t('flipHBtn');
+    dom.flipVBtn.title = t('flipVBtn');
+    dom.importImgBtn.title = t('importImgTitle');
 
     // Language switcher active state
     $$('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === LANG.current));
@@ -562,6 +583,10 @@ function cacheDom() {
     dom.togglePropsPanel = $('#toggle-props-panel');
     dom.multiPreview   = $('#multi-preview');
     dom.toggleMultiPrev= $('#tog-multi-preview');
+    dom.flipHBtn       = $('#flip-h-btn');
+    dom.flipVBtn       = $('#flip-v-btn');
+    dom.importImgBtn   = $('#import-img-btn');
+    dom.importImgInput = $('#import-img-input');
 }
 
 /* ---------- Init ---------- */
@@ -654,6 +679,10 @@ function wireEvents() {
         dom.multiPreview.style.display = e.target.checked ? 'flex' : 'none';
         if (e.target.checked) renderMultiPreview();
     });
+
+    dom.flipHBtn.addEventListener('click', () => flipSelection('h'));
+    dom.flipVBtn.addEventListener('click', () => flipSelection('v'));
+    dom.importImgInput.addEventListener('change', handleImportImage);
 }
 
 /* ---------- Mode ---------- */
@@ -2867,6 +2896,39 @@ function showImportSvgDialog() {
         overlay.remove();
     };
     textArea.focus();
+}
+
+/* ========== v5: Import Image ========== */
+async function handleImportImage(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!S.sel) { toast(t('noGlyphSelected'), 'error'); e.target.value = ''; return; }
+
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('glyph_name', S.sel);
+
+    try {
+        const r = await fetch(BASE + '/api/import-image', {
+            method: 'POST',
+            body: formData,
+        }).then(res => res.json());
+
+        if (r.status === 'success' && r.glyph) {
+            Object.assign(S.glyphMap[S.sel], r.glyph);
+            if (r.glyph.points) S.layers[S.sel] = buildLayersFromPoints(r.glyph.points);
+            S.cacheVer = r.cache_version || S.cacheVer;
+            markModified();
+            redrawEditor(); updateGridCell(S.sel);
+            await refreshFontFace(); renderPreviewText(); renderProps();
+            toast(`${t('importImgSuccess')} (${r.points_imported} pts, ${r.contours_imported} contours)`, 'ok');
+        } else {
+            toast(t('importImgFailed') + ': ' + (r.error || ''), 'error');
+        }
+    } catch (err) {
+        toast(t('importImgFailed') + ': ' + err.message, 'error');
+    }
+    e.target.value = ''; // Reset file input
 }
 
 /* ========== v5: Kerning Editor ========== */

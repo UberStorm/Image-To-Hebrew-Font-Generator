@@ -1312,6 +1312,110 @@ def set_kerning():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/import-image', methods=['POST'])
+def api_import_image():
+    """Import an image (PNG/JPG) and convert to TrueType contours."""
+    try:
+        font = editor_state.get('font')
+        if not font:
+            return jsonify({'error': 'No font loaded'}), 400
+
+        if 'image' not in request.files:
+            return jsonify({'error': 'No image uploaded'}), 400
+
+        file = request.files['image']
+        glyph_name = request.form.get('glyph_name')
+
+        if not glyph_name or glyph_name not in font['glyf']:
+            return jsonify({'error': 'Invalid glyph'}), 400
+
+        # Save uploaded file temporarily
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp:
+            file.save(tmp.name)
+            tmp_path = tmp.name
+
+        try:
+            # Import image processor
+            sys.path.insert(0, _project_root)
+            from backend.image_processor import LetterDetector
+            from backend.font_generator import FontGenerator
+
+            detector = LetterDetector()
+            original_img = detector.load_image(tmp_path)
+            binary = detector.preprocess_image(original_img, separation_level=0)
+            
+            # Detect contours from image
+            letters = detector.detect_letters(tmp_path, separation_level=0)
+
+            if not letters:
+                return jsonify({'error': 'No contours detected in image'}), 400
+
+            # Take the largest detected letter
+            letter = max(letters, key=lambda l: l['area'])
+
+            # Extract contours from original image
+            contours = detector.extract_glyph_contours(
+                binary, 
+                letter['bbox'], 
+                padding=4, 
+                original_image=original_img
+            )
+
+            if not contours:
+                return jsonify({'error': 'Failed to extract contour'}), 400
+
+            # Convert to format expected by FontGenerator
+            contour_data = {
+                'bbox': letter['bbox'],
+                'contours': contours,
+                'width': letter['bbox'][2],
+                'height': letter['bbox'][3]
+            }
+
+            # Convert to TrueType points
+            generator = FontGenerator()
+            glyph_info = generator._create_glyph(contour_data, units_per_em=1024)
+
+            _push_undo(glyph_name)
+
+            glyf = font['glyf']
+            g = glyf[glyph_name]
+
+            if glyph_info['coordinates'] and len(glyph_info['coordinates']) > 0:
+                g.coordinates = GlyphCoordinates(glyph_info['coordinates'])
+                g.flags = array.array('B', glyph_info['flags'])
+                g.endPtsOfContours = glyph_info['end_pts']
+                g.numberOfContours = len(glyph_info['end_pts'])
+                g.recalcBounds(glyf)
+
+            # Update advance width
+            if 'advance_width' in glyph_info:
+                font['hmtx'][glyph_name] = (glyph_info['advance_width'], glyph_info.get('lsb', 0))
+
+            editor_state['modified'] = True
+            _invalidate()
+
+            snap = _snapshot_glyph(glyph_name)
+            return jsonify({
+                'status': 'success',
+                'glyph': snap,
+                'cache_version': _font_cache['version'],
+                'points_imported': len(glyph_info['coordinates']) if glyph_info['coordinates'] else 0,
+                'contours_imported': len(glyph_info['end_pts'])
+            })
+
+        finally:
+            # Clean up temp file
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
 # --------------- launch ---------------
 
 def _open_browser():

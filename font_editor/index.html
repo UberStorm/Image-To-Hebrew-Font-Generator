@@ -38,6 +38,10 @@
                 </div>
             </div>
             <button class="tb-btn" id="import-svg-btn" title="Import SVG path">📥 SVG</button>
+            <label class="tb-btn upload-label" id="import-img-btn" title="Import from Image">
+                🖼️ Image
+                <input type="file" id="import-img-input" accept=".png,.jpg,.jpeg" hidden>
+            </label>
             <button class="tb-btn" id="metadata-btn" title="Font Metadata">⚙ Metadata</button>
             <button class="tb-btn" id="kerning-btn" title="Kerning Editor">⇔ Kern</button>
         </div>
@@ -72,6 +76,11 @@
                 <div class="tool-group undo-group">
                     <button class="icon-btn" id="undo-btn" title="Undo (Ctrl+Z)">↩</button>
                     <button class="icon-btn" id="redo-btn" title="Redo (Ctrl+Y)">↪</button>
+                </div>
+                <span class="toolbar-sep"></span>
+                <div class="tool-group">
+                    <button class="icon-btn" id="flip-h-btn" title="Flip Horizontal (H)">⇄</button>
+                    <button class="icon-btn" id="flip-v-btn" title="Flip Vertical (Shift+H)">⇅</button>
                 </div>
                 <span class="toolbar-sep"></span>
                 <button class="icon-btn" id="zoom-in" title="Zoom In (+)">➕</button>
