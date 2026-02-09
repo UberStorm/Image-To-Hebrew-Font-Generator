@@ -43,6 +43,16 @@ run_fonteditor.bat
 
 ## 🔤 Font Generator — יצירת פונט מתמונה
 
+### 📸 צילומי מסך
+
+<div dir="ltr" align="center">
+
+| העלאת תמונה וזיהוי | שיוך אותיות וכוונון | תצוגה מקדימה ויצירת פונט |
+|:---:|:---:|:---:|
+| ![Generator 1](screenshots/screenshot_generator1.png) | ![Generator 2](screenshots/screenshot_generator2.png) | ![Generator 3](screenshots/screenshot_generator3.png) |
+
+</div>
+
 ### ✨ תכונות
 
 #### זיהוי וסקירה
@@ -86,6 +96,14 @@ run_fonteditor.bat
 ## ✏️ Font Editor — עורך פונטים ויזואלי
 
 עורך ויזואלי לקבצי TTF — עריכת נקודות וקונטורים ברמת הגליף, עם תצוגה מקדימה חיה.
+
+### 📸 צילום מסך
+
+<div dir="ltr" align="center">
+
+![Font Editor](screenshots/Screenshot_editor.png)
+
+</div>
 
 ### ✨ תכונות
 
