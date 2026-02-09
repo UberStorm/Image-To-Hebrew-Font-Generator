@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hebrew Font Editor</title>
+    <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+    <!-- ===== Top Toolbar ===== -->
+    <header class="toolbar">
+        <div class="toolbar-left">
+            <div class="lang-switcher">
+                <button class="lang-btn" data-lang="he" title="עברית">🇮🇱</button>
+                <button class="lang-btn" data-lang="en" title="English">🇺🇸</button>
+            </div>
+            <h1 class="logo">✏️ Font Editor</h1>
+            <span id="font-name-disp" class="font-name">No font loaded</span>
+            <span id="mod-badge" class="modified-badge" style="display:none;">modified</span>
+        </div>
+        <div class="toolbar-right">
+            <select id="font-select">
+                <option value="">— Select font —</option>
+            </select>
+            <button class="tb-btn" id="load-btn" title="Load selected font">📂 Load</button>
+            <label class="tb-btn upload-label" title="Upload TTF file">
+                📁 Upload
+                <input type="file" id="upload-input" accept=".ttf,.otf" hidden>
+            </label>
+            <button class="tb-btn tb-save" id="save-btn" title="Save (Ctrl+S)">💾 Save</button>
+            <button class="tb-btn" id="save-as-btn" title="Save As">💾 Save As</button>
+        </div>
+    </header>
+
+    <!-- ===== Main Layout ===== -->
+    <main class="editor-main">
+        <!-- Left: Glyph Grid -->
+        <aside class="panel glyph-panel">
+            <div class="panel-header">
+                <span>Glyphs</span>
+                <span id="glyph-count" class="badge">0</span>
+            </div>
+            <div class="glyph-search-box">
+                <input type="text" id="glyph-search" placeholder="🔍 Search character...">
+            </div>
+            <div id="glyph-grid" class="glyph-grid">
+                <p class="empty-hint">Load a font to see glyphs</p>
+            </div>
+        </aside>
+
+        <!-- Center: Glyph Canvas -->
+        <section class="canvas-section">
+            <div class="canvas-toolbar">
+                <div class="tool-group">
+                    <button class="tool-btn active" id="tool-select" title="Select (V)">⬚ Select</button>
+                    <button class="tool-btn" id="tool-marquee" title="Marquee Select (M)">▬ Marquee</button>
+                    <button class="tool-btn" id="tool-pen" title="Pen Tool (P)">✒ Pen</button>
+                </div>
+                <span class="toolbar-sep"></span>
+                <div class="tool-group undo-group">
+                    <button class="icon-btn" id="undo-btn" title="Undo (Ctrl+Z)">↩</button>
+                    <button class="icon-btn" id="redo-btn" title="Redo (Ctrl+Y)">↪</button>
+                </div>
+                <span class="toolbar-sep"></span>
+                <button class="icon-btn" id="zoom-in" title="Zoom In (+)">➕</button>
+                <button class="icon-btn" id="zoom-out" title="Zoom Out (-)">➖</button>
+                <button class="icon-btn" id="zoom-fit" title="Fit">⊡</button>
+                <span id="zoom-disp" class="zoom-display">100%</span>
+                <div class="canvas-spacer"></div>
+                <span id="mode-disp" class="mode-display">Select (V)</span>
+                <span class="toolbar-sep"></span>
+                <label class="toggle-label">
+                    <input type="checkbox" id="tog-points" checked> Points
+                </label>
+                <label class="toggle-label">
+                    <input type="checkbox" id="tog-guides" checked> Guides
+                </label>
+            </div>
+            <div class="canvas-wrap" id="canvas-wrap">
+                <svg id="glyph-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
+                <div id="canvas-empty" class="canvas-empty" style="display:flex;">
+                    <p>Select a glyph from the grid<br>or load a font to begin</p>
+                </div>
+            </div>
+            <div class="canvas-info-bar">
+                <span id="info-char" class="info-big">—</span>
+                <span id="info-name" class="info-dim">—</span>
+                <span id="info-unicode" class="info-dim">—</span>
+                <span class="info-spacer"></span>
+                <span id="info-coord" class="info-dim"></span>
+            </div>
+        </section>
+
+        <!-- Right: Properties Panel -->
+        <aside class="panel props-panel">
+            <div class="panel-header"><span>Properties</span></div>
+            <div id="props-body" class="props-body">
+                <p class="empty-hint">Select a glyph</p>
+            </div>
+        </aside>
+    </main>
+
+    <!-- ===== Bottom: Preview ===== -->
+    <footer class="preview-bar">
+        <div class="preview-controls">
+            <input type="text" id="preview-text" placeholder="Type preview text..."
+                   value="שלום עולם! אבגדהוזחטיכלמנסעפצקרשת 1234567890">
+            <div class="preview-size-control">
+                <input type="range" id="preview-size" min="16" max="120" value="48">
+                <span id="preview-size-val">48px</span>
+            </div>
+        </div>
+        <div id="preview-render" class="preview-render">
+            Load a font to see preview
+        </div>
+    </footer>
+
+    <script src="editor.js"></script>
+</body>
+</html>
