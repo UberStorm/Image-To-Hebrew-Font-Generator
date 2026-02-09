@@ -1339,9 +1339,10 @@ def api_import_image():
             # Import image processor
             if _project_root not in sys.path:
                 sys.path.insert(0, _project_root)
-            from backend.image_processor import LetterDetector
+            from backend.image_processor import LetterDetector, GlyphExtractor
 
             detector = LetterDetector()
+            extractor = GlyphExtractor()
             original_img = detector.load_image(tmp_path)
             binary = detector.preprocess_image(original_img, separation_level=0)
 
@@ -1356,7 +1357,7 @@ def api_import_image():
             letter = max(letters, key=lambda l: l['area'])
 
             # Extract contours from original image
-            contours = detector.extract_glyph_contours(
+            contours = extractor.extract_glyph_contours(
                 binary,
                 letter['bbox'],
                 padding=4,
