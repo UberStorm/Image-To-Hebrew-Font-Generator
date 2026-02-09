@@ -1,6 +1,7 @@
 /* ============================================================
-   Hebrew Font Editor — Main Logic  v3
+   Hebrew Font Editor — Main Logic  v4
    Multi-select, Pen tool, Layers, Undo/Redo, Smooth, i18n
+   Flip/Rotate, Copy/Paste, Context Menu, Metadata, Pan/Zoom
    ============================================================ */
 (() => {
 'use strict';
@@ -97,6 +98,45 @@ const LANG = {
             noFontErr: 'לא נטען פונט',
             deleteLayer: 'מחק שכבה',
             ptUpdate: 'עדכון נקודות נכשל',
+            // New strings
+            flipH: 'הפוך אופקי',
+            flipV: 'הפוך אנכי',
+            rotate90: 'סובב 90°',
+            copy: 'העתק',
+            paste: 'הדבק',
+            copied: 'הועתקו {0} נקודות',
+            pasted: 'הודבקו {0} נקודות',
+            pasteFailed: 'הדבקה נכשלה',
+            copyGlyph: 'העתק גליף',
+            pasteGlyphHere: 'הדבק גליף כאן',
+            glyphCopied: 'גליף הועתק',
+            glyphPasted: 'גליף הודבק',
+            addPointHere: 'הוסף נקודה כאן',
+            pointAdded: 'נקודה נוספה',
+            selectAll: 'בחר הכל',
+            panCanvas: 'גרירת קנבס',
+            nudge: 'הזזה (10 יח׳)',
+            nudgeFine: 'הזזה עדינה (1 יח׳)',
+            scaleUpDown: 'הגדלה / הקטנה',
+            deselectCancel: 'ביטול בחירה / ביטול',
+            shortcuts: 'קיצורי מקלדת',
+            close: 'סגור',
+            metaTitle: 'מטאדטה של הפונט',
+            metaFamily: 'משפחה',
+            metaStyle: 'סגנון',
+            metaFullName: 'שם מלא',
+            metaVersion: 'גרסה',
+            metaPostScript: 'שם PostScript',
+            metaDesigner: 'מעצב',
+            metaURL: 'כתובת URL',
+            metaCopyright: 'זכויות יוצרים',
+            metaMetrics: 'מדדי פונט',
+            metaAscender: 'Ascender',
+            metaDescender: 'Descender',
+            metaLineGap: 'מרווח שורה',
+            metaSave: 'שמור מטאדטה',
+            metaSaved: 'מטאדטה נשמר',
+            metadata: '⚙ מטאדטה',
         },
         en: {
             title: 'Hebrew Font Editor',
@@ -183,6 +223,45 @@ const LANG = {
             noFontErr: 'No font loaded',
             deleteLayer: 'Delete layer',
             ptUpdate: 'Point update failed',
+            // New strings
+            flipH: 'Flip Horizontal',
+            flipV: 'Flip Vertical',
+            rotate90: 'Rotate 90°',
+            copy: 'Copy',
+            paste: 'Paste',
+            copied: 'Copied {0} points',
+            pasted: 'Pasted {0} points',
+            pasteFailed: 'Paste failed',
+            copyGlyph: 'Copy Glyph',
+            pasteGlyphHere: 'Paste Glyph Here',
+            glyphCopied: 'Glyph copied',
+            glyphPasted: 'Glyph pasted',
+            addPointHere: 'Add Point Here',
+            pointAdded: 'Point added',
+            selectAll: 'Select All',
+            panCanvas: 'Pan Canvas',
+            nudge: 'Nudge (10 units)',
+            nudgeFine: 'Fine Nudge (1 unit)',
+            scaleUpDown: 'Scale Up / Down',
+            deselectCancel: 'Deselect / Cancel',
+            shortcuts: 'Keyboard Shortcuts',
+            close: 'Close',
+            metaTitle: 'Font Metadata',
+            metaFamily: 'Family',
+            metaStyle: 'Style',
+            metaFullName: 'Full Name',
+            metaVersion: 'Version',
+            metaPostScript: 'PostScript Name',
+            metaDesigner: 'Designer',
+            metaURL: 'URL',
+            metaCopyright: 'Copyright',
+            metaMetrics: 'Font Metrics',
+            metaAscender: 'Ascender',
+            metaDescender: 'Descender',
+            metaLineGap: 'Line Gap',
+            metaSave: 'Save Metadata',
+            metaSaved: 'Metadata saved',
+            metadata: '⚙ Metadata',
         },
     },
 };
@@ -214,6 +293,7 @@ function applyLangToUI() {
     }
     dom.saveBtn.innerHTML = t('save');
     dom.saveAsBtn.innerHTML = t('saveAs');
+    dom.metadataBtn.innerHTML = t('metadata');
 
     // Font select first option
     const firstOpt = dom.fontSelect.querySelector('option[value=""]');
@@ -293,6 +373,7 @@ const S = {
 
     // Pen tool
     penContour: [],
+    penClickLock: false,   // prevent click firing before dblclick
 
     // Layers per glyph
     layers: {},
@@ -307,6 +388,18 @@ const S = {
     showPoints: true,
     showGuides: true,
     zoom: 1,
+    panOffset: { x: 0, y: 0 },
+    panning: false,
+    panStart: null,
+    spaceHeld: false,
+
+    // Arrow-key debounce
+    arrowTimer: null,
+    arrowAccum: { dx: 0, dy: 0 },
+
+    // Clipboard
+    clipboard: null,        // { coords, flags } for copy/paste points
+    glyphClipboard: null,   // { points, advance_width } for copy/paste glyphs
 
     // Language
     lang: localStorage.getItem('fe-lang') || 'he',
@@ -323,6 +416,7 @@ function cacheDom() {
     dom.uploadInput    = $('#upload-input');
     dom.saveBtn        = $('#save-btn');
     dom.saveAsBtn      = $('#save-as-btn');
+    dom.metadataBtn    = $('#metadata-btn');
     dom.fontNameDisp   = $('#font-name-disp');
     dom.modBadge       = $('#mod-badge');
     dom.glyphSearch    = $('#glyph-search');
@@ -367,10 +461,11 @@ function wireEvents() {
     dom.uploadInput.addEventListener('change', loadFromUpload);
     dom.saveBtn.addEventListener('click', () => saveFont(false));
     dom.saveAsBtn.addEventListener('click', () => saveFont(true));
+    dom.metadataBtn.addEventListener('click', showMetadataEditor);
     dom.glyphSearch.addEventListener('input', () => renderGrid(dom.glyphSearch.value));
     dom.zoomIn.addEventListener('click', () => applyZoom(S.zoom * 1.25));
     dom.zoomOut.addEventListener('click', () => applyZoom(S.zoom / 1.25));
-    dom.zoomFit.addEventListener('click', () => applyZoom(1));
+    dom.zoomFit.addEventListener('click', () => { S.panOffset = { x: 0, y: 0 }; applyZoom(1); });
     dom.togglePoints.addEventListener('change', e => { S.showPoints = e.target.checked; redrawEditor(); });
     dom.toggleGuides.addEventListener('change', e => { S.showGuides = e.target.checked; redrawEditor(); });
     dom.previewText.addEventListener('input', renderPreviewText);
@@ -396,8 +491,15 @@ function wireEvents() {
     dom.svg.addEventListener('wheel', onSvgWheel, { passive: false });
     dom.svg.addEventListener('dblclick', onSvgDblClick);
     dom.svg.addEventListener('click', onSvgClick);
+    dom.svg.addEventListener('mousemove', onSvgHover);
+    dom.svg.addEventListener('contextmenu', onContextMenu);
 
     window.addEventListener('keydown', onKey);
+    window.addEventListener('keyup', onKeyUp);
+
+    window.addEventListener('beforeunload', e => {
+        if (S.modified) { e.preventDefault(); e.returnValue = ''; }
+    });
 }
 
 /* ---------- Mode ---------- */
@@ -571,6 +673,7 @@ function selectGlyph(name) {
     S.selectedPts.clear();
     S.penContour = [];
     S.activeLayer = 0;
+    S.panOffset = { x: 0, y: 0 };
     $$('.grid-cell', dom.glyphGrid).forEach(c =>
         c.classList.toggle('active', c.dataset.name === name));
     redrawEditor();
@@ -647,6 +750,9 @@ function redrawEditor() {
     if (S.selectedPts.size > 0) {
         dom.infoCoord.textContent = t('ptsSelected', S.selectedPts.size);
     }
+
+    // Apply zoom + pan via viewBox
+    reapplyViewBox();
 }
 
 function drawGuides(g, aw, asc, desc, vbX, vbW) {
@@ -783,7 +889,31 @@ function drawPenPreview() {
 
 /* ==================== Mouse Handling ==================== */
 
+function onSvgHover(e) {
+    if (S.dragging || S.multiDrag || S.panning) return;
+    const pt = e.target.closest('.ctrl-point');
+    if (pt && S.glyphMap[S.sel]) {
+        const idx = parseInt(pt.dataset.idx);
+        const g = S.glyphMap[S.sel];
+        const coords = S.localPoints || g.points.coords;
+        const flags = S.localFlags || g.points.flags;
+        if (idx < coords.length) {
+            const type = flags[idx] === 1 ? t('onCurve') : t('offCurve');
+            dom.infoCoord.textContent = `pt${idx} (${coords[idx][0]}, ${coords[idx][1]}) [${type}]`;
+        }
+    }
+}
+
 function onSvgDown(e) {
+    // Middle-mouse or Space+click to pan
+    if (e.button === 1 || (e.button === 0 && S.spaceHeld)) {
+        e.preventDefault();
+        S.panning = true;
+        S.panStart = { x: e.clientX, y: e.clientY, ox: S.panOffset.x, oy: S.panOffset.y };
+        dom.svg.style.cursor = 'grabbing';
+        return;
+    }
+
     if (S.mode === MODES.PEN) return;
 
     const sv = svgCoords(e);
@@ -859,6 +989,20 @@ function onSvgDown(e) {
 }
 
 function onSvgMove(e) {
+    // Panning
+    if (S.panning && S.panStart) {
+        e.preventDefault();
+        // Convert pixel delta to SVG units
+        const rect = dom.svg.getBoundingClientRect();
+        const vb = dom.svg.viewBox.baseVal;
+        const scaleX = vb.width / rect.width;
+        const scaleY = vb.height / rect.height;
+        S.panOffset.x = S.panStart.ox - (e.clientX - S.panStart.x) * scaleX;
+        S.panOffset.y = S.panStart.oy - (e.clientY - S.panStart.y) * scaleY;
+        reapplyViewBox();
+        return;
+    }
+
     // Single drag
     if (S.dragging && S.mode === MODES.SELECT) {
         e.preventDefault();
@@ -914,6 +1058,13 @@ function onSvgMove(e) {
 }
 
 async function onSvgUp(e) {
+    if (S.panning) {
+        S.panning = false;
+        S.panStart = null;
+        dom.svg.style.cursor = S.mode === MODES.PEN || S.mode === MODES.MARQUEE ? 'crosshair' : 'default';
+        return;
+    }
+
     if (S.dragging) {
         S.dragging = false;
         $$('.ctrl-point.dragging', dom.svg).forEach(c => c.classList.remove('dragging'));
@@ -958,7 +1109,7 @@ async function onSvgUp(e) {
 /* --- Pen --- */
 function onSvgClick(e) {
     if (S.mode !== MODES.PEN || !S.sel) return;
-    // Don't fire on mouseup of a drag
+    if (S.penClickLock) return;   // ignore click fired before dblclick
     const sv = svgCoords(e);
     if (!sv) return;
 
@@ -983,6 +1134,10 @@ function onSvgClick(e) {
 
 function onSvgDblClick(e) {
     if (S.mode !== MODES.PEN) return;
+    // Remove the extra point the first click of the dbl-click added
+    if (S.penContour.length > 3) S.penContour.pop();
+    S.penClickLock = true;
+    setTimeout(() => { S.penClickLock = false; }, 300);
     if (S.penContour.length >= 3) finalizePenContour();
 }
 
@@ -1036,10 +1191,25 @@ function startMultiDrag(svgStart, g) {
 }
 
 function updateLocalVisuals() {
-    const localPath = buildPathFromPoints(S.localPoints, S.localFlags, S.localEndPts);
-    // Update ALL path elements
+    // Rebuild layer paths from local points
+    const layers = S.layers[S.sel] || [];
     const pathEls = dom.svg.querySelectorAll('g[transform="scale(1,-1)"] path');
-    if (pathEls.length === 1) {
+
+    if (layers.length > 0 && pathEls.length === layers.length) {
+        // Per-layer update
+        let start = 0;
+        for (let li = 0; li < layers.length; li++) {
+            const L = layers[li];
+            const len = L.coords.length;
+            const layerCoords = S.localPoints.slice(start, start + len);
+            const layerFlags = S.localFlags.slice(start, start + len);
+            const layerEndPts = [len - 1];
+            const pathD = buildPathFromPoints(layerCoords, layerFlags, layerEndPts);
+            if (pathEls[li]) pathEls[li].setAttribute('d', pathD);
+            start += len;
+        }
+    } else if (pathEls.length >= 1) {
+        const localPath = buildPathFromPoints(S.localPoints, S.localFlags, S.localEndPts);
         pathEls[0].setAttribute('d', localPath);
     }
 
@@ -1073,14 +1243,37 @@ async function commitPoints() {
 /* ---------- Zoom ---------- */
 function onSvgWheel(e) {
     e.preventDefault();
-    applyZoom(S.zoom * (e.deltaY > 0 ? 0.9 : 1.1));
+    const factor = e.deltaY > 0 ? 0.9 : 1.1;
+    applyZoom(S.zoom * factor, e);
 }
 
-function applyZoom(z) {
-    S.zoom = Math.max(0.2, Math.min(5, z));
+function applyZoom(z, evt) {
+    z = Math.max(0.2, Math.min(10, z));
+    S.zoom = z;
     dom.zoomDisp.textContent = Math.round(S.zoom * 100) + '%';
-    dom.svg.style.transform = `scale(${S.zoom})`;
-    dom.svg.style.transformOrigin = 'center center';
+    reapplyViewBox();
+}
+
+function reapplyViewBox() {
+    if (!S.sel || !S.glyphMap[S.sel]) return;
+    const g = S.glyphMap[S.sel];
+    const f = S.font;
+    const asc = f.ascender, desc = f.descender;
+    const aw = g.advance_width || f.units_per_em;
+    const pad = Math.round(f.units_per_em * 0.15);
+
+    const baseW = aw + pad * 2;
+    const baseH = (asc - desc) + pad * 2;
+    const w = baseW / S.zoom;
+    const h = baseH / S.zoom;
+    const cx = -pad + baseW / 2 + S.panOffset.x;
+    const cy = -asc - pad + baseH / 2 + S.panOffset.y;
+    const vbX = cx - w / 2;
+    const vbY = cy - h / 2;
+
+    dom.svg.setAttribute('viewBox', `${vbX} ${vbY} ${w} ${h}`);
+    dom.svg.style.transform = '';
+    dom.svg.style.transformOrigin = '';
 }
 
 /* ---------- Properties Panel ---------- */
@@ -1449,6 +1642,90 @@ function showSaveDialog() {
     });
 }
 
+/* ---------- Metadata Editor ---------- */
+async function showMetadataEditor() {
+    if (!S.font) { toast(t('noFontErr'), 'error'); return; }
+
+    let meta;
+    try {
+        meta = await api('/api/font-metadata');
+    } catch (err) { toast(t('editFailed'), 'error'); return; }
+
+    const entries = meta.entries || {};
+    const labels = {
+        '1': t('metaFamily'),
+        '2': t('metaStyle'),
+        '4': t('metaFullName'),
+        '5': t('metaVersion'),
+        '6': t('metaPostScript'),
+        '9': t('metaDesigner'),
+        '11': t('metaURL'),
+        '0': t('metaCopyright'),
+    };
+
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    let fieldsHtml = '';
+    for (const [id, label] of Object.entries(labels)) {
+        fieldsHtml += `
+            <div class="prop-row" style="margin:4px 0">
+                <label style="min-width:100px">${label}</label>
+                <input type="text" class="meta-input" data-id="${id}" value="${(entries[id]||'').replace(/"/g,'&quot;')}" style="flex:1">
+            </div>`;
+    }
+    fieldsHtml += `
+        <div class="prop-section-title" style="margin-top:12px">${t('metaMetrics')}</div>
+        <div class="prop-row" style="margin:4px 0">
+            <label style="min-width:100px">${t('metaAscender')}</label>
+            <input type="number" id="meta-asc" value="${meta.ascender}" step="10">
+        </div>
+        <div class="prop-row" style="margin:4px 0">
+            <label style="min-width:100px">${t('metaDescender')}</label>
+            <input type="number" id="meta-desc" value="${meta.descender}" step="10">
+        </div>
+        <div class="prop-row" style="margin:4px 0">
+            <label style="min-width:100px">${t('metaLineGap')}</label>
+            <input type="number" id="meta-gap" value="${meta.lineGap}" step="10">
+        </div>`;
+
+    overlay.innerHTML = `
+        <div class="dialog-box" style="min-width:450px;max-height:80vh;overflow-y:auto">
+            <h3>⚙ ${t('metaTitle')}</h3>
+            ${fieldsHtml}
+            <div class="dialog-actions" style="margin-top:16px">
+                <button class="tb-btn" id="meta-cancel">${t('cancel')}</button>
+                <button class="tb-btn tb-save" id="meta-ok">${t('metaSave')}</button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(overlay);
+    overlay.querySelector('#meta-cancel').onclick = () => overlay.remove();
+    overlay.querySelector('#meta-ok').onclick = async () => {
+        const newEntries = {};
+        overlay.querySelectorAll('.meta-input').forEach(inp => {
+            const val = inp.value.trim();
+            if (val) newEntries[inp.dataset.id] = val;
+        });
+        const body = { entries: newEntries };
+        const ascV = overlay.querySelector('#meta-asc').value;
+        const descV = overlay.querySelector('#meta-desc').value;
+        const gapV = overlay.querySelector('#meta-gap').value;
+        if (ascV) body.ascender = parseInt(ascV);
+        if (descV) body.descender = parseInt(descV);
+        if (gapV !== '') body.lineGap = parseInt(gapV);
+
+        try {
+            const r = await api('/api/font-metadata', body);
+            if (r.status === 'success') {
+                markModified();
+                toast(t('metaSaved'), 'ok');
+            }
+        } catch (err) { toast(t('editFailed'), 'error'); }
+        overlay.remove();
+    };
+    overlay.querySelector('.meta-input').focus();
+}
+
 /* ---------- Undo / Redo ---------- */
 async function doUndo() {
     if (!S.sel) return;
@@ -1545,9 +1822,17 @@ function onKey(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     const g = S.sel ? S.glyphMap[S.sel] : null;
 
-    if (e.key === 'v' || e.key === 'V') { setMode(MODES.SELECT); return; }
-    if (e.key === 'm' || e.key === 'M') { setMode(MODES.MARQUEE); return; }
-    if (e.key === 'p' || e.key === 'P') { setMode(MODES.PEN); return; }
+    // Space held = pan mode
+    if (e.key === ' ' && !e.repeat) {
+        e.preventDefault();
+        S.spaceHeld = true;
+        dom.svg.style.cursor = 'grab';
+        return;
+    }
+
+    if ((e.key === 'v' || e.key === 'V') && !e.ctrlKey && !e.metaKey) { setMode(MODES.SELECT); return; }
+    if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.metaKey) { setMode(MODES.MARQUEE); return; }
+    if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey) { setMode(MODES.PEN); return; }
 
     if (e.key === 'a' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
@@ -1556,6 +1841,19 @@ function onKey(e) {
             for (let i = 0; i < g.points.coords.length; i++) S.selectedPts.add(i);
             redrawEditor(); renderProps();
         }
+        return;
+    }
+
+    // Copy / Paste points (Ctrl+C / Ctrl+V)
+    if (e.key === 'c' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        if (S.selectedPts.size > 0) copySelectedPoints();
+        else if (g) copyGlyph();
+        return;
+    }
+    if (e.key === 'v' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        if (S.clipboard) pastePoints();
         return;
     }
 
@@ -1580,28 +1878,87 @@ function onKey(e) {
 
     switch (e.key) {
         case 'ArrowRight': e.preventDefault();
-            if (S.selectedPts.size > 0) moveSelectedPts(shift, 0);
-            else if (g) quickTransform(shift, 0); break;
+            if (S.selectedPts.size > 0) accumulateMove(shift, 0);
+            else if (g) accumulateGlyphMove(shift, 0); break;
         case 'ArrowLeft': e.preventDefault();
-            if (S.selectedPts.size > 0) moveSelectedPts(-shift, 0);
-            else if (g) quickTransform(-shift, 0); break;
+            if (S.selectedPts.size > 0) accumulateMove(-shift, 0);
+            else if (g) accumulateGlyphMove(-shift, 0); break;
         case 'ArrowUp': e.preventDefault();
-            if (S.selectedPts.size > 0) moveSelectedPts(0, shift);
-            else if (g) quickTransform(0, shift); break;
+            if (S.selectedPts.size > 0) accumulateMove(0, shift);
+            else if (g) accumulateGlyphMove(0, shift); break;
         case 'ArrowDown': e.preventDefault();
-            if (S.selectedPts.size > 0) moveSelectedPts(0, -shift);
-            else if (g) quickTransform(0, -shift); break;
+            if (S.selectedPts.size > 0) accumulateMove(0, -shift);
+            else if (g) accumulateGlyphMove(0, -shift); break;
         case '+': case '=': e.preventDefault();
             if (g) quickScale(1.05); break;
         case '-': case '_': e.preventDefault();
             if (g) quickScale(0.95); break;
         case 's':
             if (e.ctrlKey) { e.preventDefault(); saveFont(false); } break;
+        case 'h':
+            if (g) { e.preventDefault(); flipSelection('h'); } break;
+        case 'H':
+            if (g) { e.preventDefault(); flipSelection('v'); } break;
+        case 'r':
+            if (g && !e.ctrlKey) {
+                e.preventDefault();
+                const angle = e.shiftKey ? -90 : 90;
+                rotateSelection(angle);
+            } break;
+        case '?':
+            e.preventDefault(); showShortcutOverlay(); break;
         case 'Delete':
             if (S.selectedPts.size > 0) deleteSelectedPoints();
             else if (g) apiEditGlyph('/api/glyph/reset', { glyph_name: S.sel });
             break;
     }
+}
+
+function onKeyUp(e) {
+    if (e.key === ' ') {
+        S.spaceHeld = false;
+        if (!S.panning) {
+            dom.svg.style.cursor = S.mode === MODES.PEN || S.mode === MODES.MARQUEE ? 'crosshair' : 'default';
+        }
+    }
+}
+
+/* ---------- Arrow-key debounced move ---------- */
+function accumulateMove(dx, dy) {
+    S.arrowAccum.dx += dx;
+    S.arrowAccum.dy += dy;
+    // Immediate visual feedback
+    const g = S.glyphMap[S.sel];
+    if (g && g.points) {
+        if (!S.localPoints) {
+            S.localPoints = g.points.coords.map(p => [...p]);
+            S.localFlags = [...g.points.flags];
+            S.localEndPts = [...g.points.endPts];
+        }
+        for (const idx of S.selectedPts) {
+            S.localPoints[idx][0] += dx;
+            S.localPoints[idx][1] += dy;
+        }
+        updateLocalVisuals();
+    }
+    clearTimeout(S.arrowTimer);
+    S.arrowTimer = setTimeout(() => {
+        const adx = S.arrowAccum.dx, ady = S.arrowAccum.dy;
+        S.arrowAccum.dx = 0; S.arrowAccum.dy = 0;
+        S.localPoints = null; S.localFlags = null; S.localEndPts = null;
+        moveSelectedPts(adx, ady);
+    }, 250);
+}
+
+function accumulateGlyphMove(dx, dy) {
+    S.arrowAccum.dx += dx;
+    S.arrowAccum.dy += dy;
+    clearTimeout(S.arrowTimer);
+    S.arrowTimer = setTimeout(() => {
+        const adx = S.arrowAccum.dx, ady = S.arrowAccum.dy;
+        S.arrowAccum.dx = 0; S.arrowAccum.dy = 0;
+        quickTransform(adx, ady);
+    }, 250);
 }
 
 async function moveSelectedPts(dx, dy) {
@@ -1631,6 +1988,263 @@ async function quickScale(factor) {
     await apiEditGlyph('/api/glyph/transform', {
         glyph_name: S.sel, shift_x: 0, shift_y: 0, scale: factor,
     });
+}
+
+/* ---------- Flip / Rotate ---------- */
+async function flipSelection(axis) {
+    const g = S.glyphMap[S.sel];
+    if (!g || !g.points) return;
+    const body = { glyph_name: S.sel, axis };
+    if (S.selectedPts.size > 0) body.indices = [...S.selectedPts];
+    await apiEditGlyph('/api/glyph/flip', body);
+}
+
+async function rotateSelection(angle) {
+    const g = S.glyphMap[S.sel];
+    if (!g || !g.points) return;
+    const body = { glyph_name: S.sel, angle };
+    if (S.selectedPts.size > 0) body.indices = [...S.selectedPts];
+    await apiEditGlyph('/api/glyph/rotate', body);
+}
+
+/* ---------- Copy / Paste Points ---------- */
+function copySelectedPoints() {
+    const g = S.glyphMap[S.sel];
+    if (!g || !g.points || S.selectedPts.size === 0) return;
+    const sorted = [...S.selectedPts].sort((a, b) => a - b);
+    S.clipboard = {
+        coords: sorted.map(i => [...g.points.coords[i]]),
+        flags: sorted.map(i => g.points.flags[i]),
+    };
+    toast(t('copied', S.clipboard.coords.length), 'ok');
+}
+
+async function pastePoints() {
+    if (!S.clipboard || !S.sel) return;
+    const g = S.glyphMap[S.sel];
+    if (!g) return;
+    try {
+        const r = await api('/api/glyph/add-contour', {
+            glyph_name: S.sel,
+            coords: S.clipboard.coords,
+            flags: S.clipboard.flags,
+        });
+        if (r.glyph) {
+            Object.assign(S.glyphMap[S.sel], r.glyph);
+            if (r.glyph.points) S.layers[S.sel] = buildLayersFromPoints(r.glyph.points);
+            S.cacheVer = r.cache_version || S.cacheVer;
+            markModified();
+            redrawEditor(); updateGridCell(S.sel);
+            await refreshFontFace(); renderPreviewText(); renderProps();
+            toast(t('pasted', S.clipboard.coords.length), 'ok');
+        }
+    } catch (err) { toast(t('pasteFailed'), 'error'); }
+}
+
+/* ---------- Copy / Paste Glyphs ---------- */
+function copyGlyph() {
+    const g = S.glyphMap[S.sel];
+    if (!g || !g.points) return;
+    S.glyphClipboard = {
+        points: JSON.parse(JSON.stringify(g.points)),
+        advance_width: g.advance_width,
+    };
+    toast(t('glyphCopied'), 'ok');
+}
+
+async function pasteGlyphTo(targetName) {
+    if (!S.glyphClipboard || !targetName) return;
+    try {
+        const r = await api('/api/glyph/set-points-full', {
+            glyph_name: targetName,
+            coords: S.glyphClipboard.points.coords,
+            flags: S.glyphClipboard.points.flags,
+            endPts: S.glyphClipboard.points.endPts,
+        });
+        if (r.glyph) {
+            Object.assign(S.glyphMap[targetName], r.glyph);
+            if (r.glyph.points) S.layers[targetName] = buildLayersFromPoints(r.glyph.points);
+            S.cacheVer = r.cache_version || S.cacheVer;
+            markModified();
+            if (S.sel === targetName) { redrawEditor(); renderProps(); }
+            updateGridCell(targetName);
+            await refreshFontFace(); renderPreviewText();
+            toast(t('glyphPasted'), 'ok');
+        }
+    } catch (err) { toast(t('pasteFailed'), 'error'); }
+}
+
+/* ---------- Add Point on Segment ---------- */
+async function addPointOnSegment(afterIdx, x, y) {
+    if (!S.sel) return;
+    try {
+        const r = await api('/api/glyph/add-point-on-segment', {
+            glyph_name: S.sel, after_index: afterIdx, x, y,
+        });
+        if (r.glyph) {
+            Object.assign(S.glyphMap[S.sel], r.glyph);
+            if (r.glyph.points) S.layers[S.sel] = buildLayersFromPoints(r.glyph.points);
+            S.cacheVer = r.cache_version || S.cacheVer;
+            markModified(); S.selectedPts.clear(); S.selectedPts.add(afterIdx + 1);
+            redrawEditor(); updateGridCell(S.sel); renderProps();
+            await refreshFontFace(); renderPreviewText();
+            toast(t('pointAdded'), 'ok');
+        }
+    } catch (err) { toast(t('editFailed'), 'error'); }
+}
+
+/* ---------- Right-click Context Menu ---------- */
+function onContextMenu(e) {
+    e.preventDefault();
+    removeContextMenu();
+    if (!S.sel || !S.glyphMap[S.sel]) return;
+    const g = S.glyphMap[S.sel];
+    const sv = svgCoords(e);
+
+    const items = [];
+
+    // If right-clicking on a line segment, offer to add point
+    if (g.points && S.mode === MODES.SELECT) {
+        const nearest = findNearestSegment(sv, g);
+        if (nearest !== null) {
+            items.push({
+                label: t('addPointHere'),
+                action: () => addPointOnSegment(nearest.afterIdx, Math.round(sv.x), Math.round(-sv.y)),
+            });
+        }
+    }
+
+    // Point-related items
+    if (S.selectedPts.size > 0) {
+        items.push({ label: t('deleteSelPts'), action: deleteSelectedPoints });
+        items.push({ label: t('toggleOnOff'), action: togglePointType });
+        items.push({ label: `${t('flipH')} (H)`, action: () => flipSelection('h') });
+        items.push({ label: `${t('flipV')} (Shift+H)`, action: () => flipSelection('v') });
+        items.push({ label: `${t('rotate90')} (R)`, action: () => rotateSelection(90) });
+        items.push(null); // separator
+        items.push({ label: `${t('copy')} (Ctrl+C)`, action: copySelectedPoints });
+    }
+
+    if (S.clipboard) {
+        items.push({ label: `${t('paste')} (Ctrl+V)`, action: pastePoints });
+    }
+
+    if (g) {
+        items.push(null);
+        items.push({ label: t('copyGlyph'), action: copyGlyph });
+        if (S.glyphClipboard) {
+            items.push({ label: t('pasteGlyphHere'), action: () => pasteGlyphTo(S.sel) });
+        }
+    }
+
+    if (items.length === 0) return;
+
+    const menu = document.createElement('div');
+    menu.className = 'ctx-menu';
+    menu.style.left = e.clientX + 'px';
+    menu.style.top = e.clientY + 'px';
+
+    for (const item of items) {
+        if (item === null) {
+            const sep = document.createElement('div');
+            sep.className = 'ctx-sep';
+            menu.appendChild(sep);
+            continue;
+        }
+        const btn = document.createElement('div');
+        btn.className = 'ctx-item';
+        btn.textContent = item.label;
+        btn.addEventListener('click', () => { removeContextMenu(); item.action(); });
+        menu.appendChild(btn);
+    }
+
+    document.body.appendChild(menu);
+
+    // Close on next click
+    setTimeout(() => {
+        window.addEventListener('click', removeContextMenu, { once: true });
+        window.addEventListener('contextmenu', removeContextMenu, { once: true });
+    }, 10);
+}
+
+function removeContextMenu() {
+    const old = document.querySelector('.ctx-menu');
+    if (old) old.remove();
+}
+
+function findNearestSegment(sv, g) {
+    if (!g.points) return null;
+    const pts = g.points.coords;
+    const endPts = g.points.endPts;
+    const threshold = S.font.units_per_em / 25;
+    let bestDist = threshold;
+    let best = null;
+
+    let start = 0;
+    for (const end of endPts) {
+        for (let i = start; i <= end; i++) {
+            const next = i === end ? start : i + 1;
+            const ax = pts[i][0], ay = pts[i][1];
+            const bx = pts[next][0], by = pts[next][1];
+            const px = sv.x, py = -sv.y;  // convert SVG y to font y
+
+            // Distance from point to line segment
+            const dx = bx - ax, dy = by - ay;
+            const len2 = dx * dx + dy * dy;
+            if (len2 < 1) continue;
+            let t2 = ((px - ax) * dx + (py - ay) * dy) / len2;
+            t2 = Math.max(0, Math.min(1, t2));
+            const cx = ax + t2 * dx, cy = ay + t2 * dy;
+            const dist = Math.sqrt((px - cx) ** 2 + (py - cy) ** 2);
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = { afterIdx: i, dist };
+            }
+        }
+        start = end + 1;
+    }
+    return best;
+}
+
+/* ---------- Keyboard Shortcut Overlay ---------- */
+function showShortcutOverlay() {
+    if (document.querySelector('.shortcut-overlay')) { removeShortcutOverlay(); return; }
+    const shortcuts = [
+        ['V', t('selectV')],
+        ['M', t('marqueeM')],
+        ['P', t('penP')],
+        ['H', t('flipH')],
+        ['Shift+H', t('flipV')],
+        ['R', t('rotate90')],
+        ['Ctrl+A', t('selectAll')],
+        ['Ctrl+C', t('copy')],
+        ['Ctrl+V', t('paste')],
+        ['Ctrl+Z', t('undo')],
+        ['Ctrl+Y', t('redo')],
+        ['Ctrl+S', t('save')],
+        ['Space+Drag', t('panCanvas')],
+        ['Arrows', t('nudge')],
+        ['Shift+Arrows', t('nudgeFine')],
+        ['+/-', t('scaleUpDown')],
+        ['Delete', t('deleteSelPts')],
+        ['Escape', t('deselectCancel')],
+        ['?', t('shortcuts')],
+    ];
+
+    const overlay = document.createElement('div');
+    overlay.className = 'shortcut-overlay';
+    let html = `<h3>${t('shortcuts')}</h3><div class="shortcut-grid">`;
+    for (const [key, desc] of shortcuts) {
+        html += `<kbd>${key}</kbd><span>${desc}</span>`;
+    }
+    html += `</div><button class="prop-btn" onclick="this.parentElement.remove()">${t('close')}</button>`;
+    overlay.innerHTML = html;
+    document.body.appendChild(overlay);
+}
+
+function removeShortcutOverlay() {
+    const el = document.querySelector('.shortcut-overlay');
+    if (el) el.remove();
 }
 
 /* ---------- Utility ---------- */

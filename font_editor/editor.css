@@ -789,3 +789,89 @@ html[dir="rtl"] body { direction: rtl; }
 .ctrl-point.selected {
     filter: drop-shadow(0 0 4px var(--pt-selected));
 }
+
+/* ===== Context Menu ===== */
+.ctx-menu {
+    position: fixed;
+    z-index: 9999;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-width: 180px;
+    padding: 4px 0;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    font-size: 0.85em;
+}
+
+.ctx-item {
+    padding: 6px 16px;
+    cursor: pointer;
+    color: var(--text);
+    white-space: nowrap;
+    transition: background var(--transition);
+}
+
+.ctx-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.ctx-sep {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 8px;
+}
+
+/* ===== Shortcut Overlay ===== */
+.shortcut-overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 32px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    max-height: 80vh;
+    overflow-y: auto;
+    min-width: 320px;
+}
+
+.shortcut-overlay h3 {
+    color: var(--accent);
+    margin-bottom: 16px;
+    text-align: center;
+    font-size: 1.1em;
+}
+
+.shortcut-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 16px;
+    align-items: center;
+}
+
+.shortcut-grid kbd {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: monospace;
+    font-size: 0.85em;
+    color: var(--accent);
+    white-space: nowrap;
+    text-align: center;
+}
+
+.shortcut-grid span {
+    color: var(--text);
+    font-size: 0.9em;
+}
+
+.shortcut-overlay .prop-btn {
+    display: block;
+    margin: 16px auto 0;
+    min-width: 80px;
+}
