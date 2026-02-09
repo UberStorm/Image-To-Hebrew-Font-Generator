@@ -1443,13 +1443,13 @@ def api_import_image():
             editor_state['modified'] = True
             _invalidate()
 
-            snap = _snapshot_glyph(glyph_name)
+            glyph_data = _glyph_info(glyph_name)
             total_pts = len(glyph.coordinates) if glyph.coordinates else 0
             total_contours = glyph.numberOfContours if glyph.numberOfContours else 0
 
             return jsonify({
                 'status': 'success',
-                'glyph': snap,
+                'glyph': glyph_data,
                 'cache_version': _font_cache['version'],
                 'points_imported': total_pts,
                 'contours_imported': total_contours
