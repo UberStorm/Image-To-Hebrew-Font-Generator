@@ -180,6 +180,12 @@ const LANG = {
             guideRemoved: 'קו עזר הוסר',
             flipHBtn: 'הפוך אופקי (H)',
             flipVBtn: 'הפוך אנכי (Shift+H)',
+            rotateFree: 'סיבוב חופשי',
+            rotateFreeTitle: 'סיבוב בזווית חופשית',
+            rotateAngle: 'זווית (מעלות):',
+            rotateBtn: 'סובב',
+            rotateCw: 'עם כיוון השעון',
+            rotateCcw: 'נגד כיוון השעון',
             importImage: '🖼️ ייבוא תמונה',
             importImgTitle: 'ייבוא תמונה לגליף',
             importImgSuccess: 'תמונה יובאה בהצלחה',
@@ -353,6 +359,12 @@ const LANG = {
             guideRemoved: 'Guide removed',
             flipHBtn: 'Flip Horizontal (H)',
             flipVBtn: 'Flip Vertical (Shift+H)',
+            rotateFree: 'Free Rotate',
+            rotateFreeTitle: 'Rotate by Custom Angle',
+            rotateAngle: 'Angle (degrees):',
+            rotateBtn: 'Rotate',
+            rotateCw: 'Clockwise',
+            rotateCcw: 'Counter-clockwise',
             importImage: '🖼️ Import Image',
             importImgTitle: 'Import Image to Glyph',
             importImgSuccess: 'Image imported successfully',
@@ -444,6 +456,7 @@ function applyLangToUI() {
     dom.exportBtn.textContent = '📤 ' + t('exportAs');
     dom.flipHBtn.title = t('flipHBtn');
     dom.flipVBtn.title = t('flipVBtn');
+    dom.rotateFreeBtn.title = t('rotateFreeTitle');
     dom.importImgBtn.title = t('importImgTitle');
 
     // Language switcher active state
@@ -585,6 +598,7 @@ function cacheDom() {
     dom.toggleMultiPrev= $('#tog-multi-preview');
     dom.flipHBtn       = $('#flip-h-btn');
     dom.flipVBtn       = $('#flip-v-btn');
+    dom.rotateFreeBtn  = $('#rotate-free-btn');
     dom.importImgBtn   = $('#import-img-btn');
     dom.importImgInput = $('#import-img-input');
 }
@@ -682,6 +696,7 @@ function wireEvents() {
 
     dom.flipHBtn.addEventListener('click', () => flipSelection('h'));
     dom.flipVBtn.addEventListener('click', () => flipSelection('v'));
+    dom.rotateFreeBtn.addEventListener('click', showFreeRotateDialog);
     dom.importImgInput.addEventListener('change', handleImportImage);
 }
 
@@ -2241,6 +2256,72 @@ async function rotateSelection(angle) {
     await apiEditGlyph('/api/glyph/rotate', body);
 }
 
+function showFreeRotateDialog() {
+    const g = S.glyphMap[S.sel];
+    if (!g || !g.points) { toast(t('noGlyphSelected'), 'error'); return; }
+
+    // Remove existing
+    const old = document.querySelector('#rotate-dialog-overlay');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    overlay.id = 'rotate-dialog-overlay';
+    overlay.innerHTML = `
+        <div class="kern-dialog" style="max-width:340px;">
+            <h3>${t('rotateFreeTitle')}</h3>
+            <div style="margin:1rem 0;">
+                <label style="display:block;margin-bottom:0.5rem;">${t('rotateAngle')}</label>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <input type="range" id="rotate-slider" min="-180" max="180" value="0" step="1" style="flex:1;">
+                    <input type="number" id="rotate-angle-input" value="0" min="-360" max="360" step="1" style="width:70px;padding:0.4rem;border-radius:6px;border:1px solid var(--border);background:var(--bg-input);color:var(--text);text-align:center;font-size:1rem;">
+                    <span>°</span>
+                </div>
+            </div>
+            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+                <button class="tb-btn" id="rotate-45">45°</button>
+                <button class="tb-btn" id="rotate-90">90°</button>
+                <button class="tb-btn" id="rotate-180">180°</button>
+                <button class="tb-btn" id="rotate-m45">-45°</button>
+                <button class="tb-btn" id="rotate-m90">-90°</button>
+            </div>
+            <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
+                <button class="tb-btn" id="rotate-cancel">${t('close')}</button>
+                <button class="tb-btn tb-save" id="rotate-apply">${t('rotateBtn')}</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const slider = overlay.querySelector('#rotate-slider');
+    const input = overlay.querySelector('#rotate-angle-input');
+
+    slider.addEventListener('input', () => { input.value = slider.value; });
+    input.addEventListener('input', () => { slider.value = Math.max(-180, Math.min(180, input.value)); });
+
+    // Preset buttons
+    [45, 90, 180, -45, -90].forEach(a => {
+        const id = a < 0 ? `#rotate-m${Math.abs(a)}` : `#rotate-${a}`;
+        overlay.querySelector(id).addEventListener('click', () => {
+            input.value = a;
+            slider.value = Math.max(-180, Math.min(180, a));
+        });
+    });
+
+    overlay.querySelector('#rotate-cancel').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+    overlay.querySelector('#rotate-apply').addEventListener('click', async () => {
+        const angle = parseFloat(input.value);
+        if (isNaN(angle) || angle === 0) { overlay.remove(); return; }
+        overlay.remove();
+        await rotateSelection(angle);
+    });
+
+    input.focus();
+    input.select();
+}
+
 /* ---------- Copy / Paste Points ---------- */
 function copySelectedPoints() {
     const g = S.glyphMap[S.sel];
@@ -2355,6 +2436,7 @@ function onContextMenu(e) {
         items.push({ label: `${t('flipH')} (H)`, action: () => flipSelection('h') });
         items.push({ label: `${t('flipV')} (Shift+H)`, action: () => flipSelection('v') });
         items.push({ label: `${t('rotate90')} (R)`, action: () => rotateSelection(90) });
+        items.push({ label: `${t('rotateFree')}...`, action: showFreeRotateDialog });
         items.push(null); // separator
         items.push({ label: `${t('copy')} (Ctrl+C)`, action: copySelectedPoints });
     }
