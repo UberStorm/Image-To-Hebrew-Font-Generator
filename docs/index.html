@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hebrew Font Maker — יוצר פונטים עברית</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0a0a0f;
+            --bg-card: #13131a;
+            --bg-card-hover: #1a1a25;
+            --border: #2a2a3a;
+            --text: #e8e8f0;
+            --text-dim: #8888a0;
+            --accent: #6c5ce7;
+            --accent-light: #a29bfe;
+            --accent-glow: rgba(108, 92, 231, 0.3);
+            --green: #00b894;
+            --green-glow: rgba(0, 184, 148, 0.3);
+            --orange: #fdcb6e;
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            font-family: 'Heebo', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Glow background blobs ── */
+        .glow-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        .glow-bg::before, .glow-bg::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.15;
+        }
+        .glow-bg::before {
+            width: 600px; height: 600px;
+            background: var(--accent);
+            top: -200px; right: -100px;
+        }
+        .glow-bg::after {
+            width: 500px; height: 500px;
+            background: var(--green);
+            bottom: -150px; left: -100px;
+        }
+
+        /* ── Nav ── */
+        nav {
+            position: fixed; top: 0; right: 0; left: 0;
+            z-index: 100;
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+        }
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+        .nav-logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--accent-light);
+            text-decoration: none;
+        }
+        .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+        .nav-links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 400;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text); }
+        .nav-github {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.4rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .nav-github:hover {
+            border-color: var(--accent);
+            background: var(--bg-card-hover);
+        }
+        .nav-github svg { width: 18px; height: 18px; fill: var(--text); }
+
+        /* ── Hero ── */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 6rem 2rem 4rem;
+        }
+        .hero-content { max-width: 800px; }
+        .hero-badge {
+            display: inline-block;
+            background: var(--accent-glow);
+            border: 1px solid rgba(108, 92, 231, 0.4);
+            color: var(--accent-light);
+            padding: 0.35rem 1.2rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, var(--accent-light), var(--green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-dim);
+            max-width: 600px;
+            margin: 0 auto 2.5rem;
+        }
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 2rem;
+            border-radius: var(--radius-sm);
+            font-family: 'Heebo', sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #7c3aed);
+            color: #fff;
+            box-shadow: 0 4px 24px var(--accent-glow);
+        }
+        .btn-primary:hover { box-shadow: 0 8px 32px var(--accent-glow); }
+        .btn-outline {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-outline:hover {
+            border-color: var(--accent);
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+
+        /* ── Section shared ── */
+        section {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section-label {
+            display: inline-block;
+            background: var(--accent-glow);
+            border: 1px solid rgba(108, 92, 231, 0.3);
+            color: var(--accent-light);
+            padding: 0.25rem 1rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+        .section-label.green {
+            background: var(--green-glow);
+            border-color: rgba(0, 184, 148, 0.3);
+            color: var(--green);
+        }
+        .section-title {
+            font-size: clamp(1.8rem, 3vw, 2.5rem);
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+        .section-desc {
+            color: var(--text-dim);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin-bottom: 3rem;
+        }
+
+        /* ── Tool Cards (Generator / Editor intro) ── */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        .tool-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            transition: border-color 0.25s, transform 0.2s;
+        }
+        .tool-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-4px);
+        }
+        .tool-card .icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .tool-card .icon.purple { background: var(--accent-glow); }
+        .tool-card .icon.teal { background: var(--green-glow); }
+        .tool-card h3 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .tool-card p { color: var(--text-dim); font-size: 0.95rem; }
+
+        /* ── Features grid ── */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.25rem;
+        }
+        .feature {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 1.5rem;
+            transition: border-color 0.2s;
+        }
+        .feature:hover { border-color: var(--accent); }
+        .feature .emoji { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
+        .feature h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.3rem; }
+        .feature p { color: var(--text-dim); font-size: 0.88rem; line-height: 1.6; }
+
+        /* ── Screenshots ── */
+        .screenshots {
+            margin-top: 2rem;
+        }
+        .screenshots-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.25rem;
+            margin-top: 1.5rem;
+        }
+        .screenshot {
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .screenshot:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        .screenshot img {
+            width: 100%;
+            display: block;
+        }
+        .screenshot-caption {
+            background: var(--bg-card);
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+            color: var(--text-dim);
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+        .screenshot-full {
+            max-width: 900px;
+            margin: 1.5rem auto 0;
+        }
+
+        /* ── Steps ── */
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+            margin-top: 2rem;
+            counter-reset: step;
+        }
+        .step {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 1.5rem;
+            position: relative;
+            counter-increment: step;
+        }
+        .step::before {
+            content: counter(step);
+            position: absolute;
+            top: 1rem; left: 1rem;
+            width: 28px; height: 28px;
+            border-radius: 8px;
+            background: var(--accent-glow);
+            color: var(--accent-light);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        .step h4 { margin-bottom: 0.3rem; font-weight: 600; }
+        .step p { color: var(--text-dim); font-size: 0.88rem; }
+
+        /* ── Keyboard shortcuts ── */
+        .shortcuts-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        .shortcuts-table th,
+        .shortcuts-table td {
+            padding: 0.6rem 1rem;
+            text-align: right;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+        .shortcuts-table th {
+            color: var(--text-dim);
+            font-weight: 500;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .shortcuts-table kbd {
+            display: inline-block;
+            background: var(--bg-card-hover);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.15rem 0.5rem;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: var(--accent-light);
+        }
+
+        /* ── Install section ── */
+        .install-block {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-top: 1.5rem;
+        }
+        .install-block pre {
+            background: #0d0d14;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 1.25rem 1.5rem;
+            overflow-x: auto;
+            font-size: 0.9rem;
+            line-height: 1.8;
+            direction: ltr;
+            text-align: left;
+            color: var(--text-dim);
+            margin-top: 1rem;
+        }
+        .install-block pre .comment { color: #555570; }
+        .install-block pre .cmd { color: var(--green); }
+        .install-block h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .install-block p { color: var(--text-dim); font-size: 0.9rem; }
+
+        /* ── Tech stack ── */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .tech-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 1.25rem;
+        }
+        .tech-item h4 { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.25rem; }
+        .tech-item p { color: var(--text-dim); font-size: 0.85rem; }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            padding: 3rem 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+        footer a { color: var(--accent-light); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+
+        /* ── Mobile ── */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hero { padding-top: 8rem; }
+            section { padding: 3rem 1.25rem; }
+            .tools-grid { grid-template-columns: 1fr; }
+            .features-grid { grid-template-columns: 1fr; }
+            .screenshots-row { grid-template-columns: 1fr; }
+            .steps { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="glow-bg"></div>
+
+<!-- ════════════════ NAV ════════════════ -->
+<nav>
+    <div class="nav-inner">
+        <a href="#" class="nav-logo">🔤 Hebrew Font Maker</a>
+        <ul class="nav-links">
+            <li><a href="#generator">יוצר פונטים</a></li>
+            <li><a href="#editor">עורך פונטים</a></li>
+            <li><a href="#install">התקנה</a></li>
+            <li><a href="#tech">טכנולוגיות</a></li>
+        </ul>
+        <a href="https://github.com/UberStorm/Image-To-Hebrew-Font-Generator" target="_blank" class="nav-github">
+            <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            GitHub
+        </a>
+    </div>
+</nav>
+
+<!-- ════════════════ HERO ════════════════ -->
+<section class="hero">
+    <div class="hero-content">
+        <span class="hero-badge">🇮🇱 Open Source · Python + Flask</span>
+        <h1>יצירה ועריכה של<br><span class="gradient">פונטים עבריים</span></h1>
+        <p>מתמונת AI לפונט TTF מוכן — זיהוי אוטומטי של אותיות, שיוך, כוונון, ועריכה ויזואלית מתקדמת</p>
+        <div class="hero-buttons">
+            <a href="https://github.com/UberStorm/Image-To-Hebrew-Font-Generator" target="_blank" class="btn btn-primary">
+                <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                קוד מקור ב-GitHub
+            </a>
+            <a href="#install" class="btn btn-outline">התקנה מהירה ⬇</a>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════ TWO TOOLS ════════════════ -->
+<section>
+    <div class="tools-grid">
+        <div class="tool-card">
+            <div class="icon purple">🔤</div>
+            <h3>Font Generator</h3>
+            <p>מעלים תמונה עם אותיות → המערכת מזהה, משייכת, מכווננת ויוצרת קובץ TTF מוכן להתקנה</p>
+        </div>
+        <div class="tool-card">
+            <div class="icon teal">✏️</div>
+            <h3>Font Editor</h3>
+            <p>עורך ויזואלי לקבצי TTF — עריכת נקודות, ציור קונטורים, עיגול פינות, שכבות ותצוגה מקדימה חיה</p>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════ GENERATOR ════════════════ -->
+<section id="generator">
+    <span class="section-label">כלי #1</span>
+    <h2 class="section-title">🔤 Font Generator</h2>
+    <p class="section-desc">יצירת פונט TTF מתמונה — זיהוי אוטומטי, שיוך במקלדת, כוונון ויצירה</p>
+
+    <div class="screenshots screenshots-row">
+        <div class="screenshot">
+            <img src="../screenshots/screenshot_generator1.png" alt="העלאת תמונה וזיהוי אותיות">
+            <div class="screenshot-caption">העלאת תמונה וזיהוי אוטומטי</div>
+        </div>
+        <div class="screenshot">
+            <img src="../screenshots/screenshot_generator2.png" alt="שיוך אותיות וכוונון">
+            <div class="screenshot-caption">שיוך אותיות וכוונון</div>
+        </div>
+        <div class="screenshot">
+            <img src="../screenshots/screenshot_generator3.png" alt="תצוגה מקדימה ויצירת פונט">
+            <div class="screenshot-caption">תצוגה מקדימה ויצירת פונט</div>
+        </div>
+    </div>
+
+    <div class="features-grid" style="margin-top: 3rem;">
+        <div class="feature">
+            <span class="emoji">🔍</span>
+            <h4>זיהוי אוטומטי</h4>
+            <p>מעלים תמונה והמערכת מזהה את כל הצורות. רמת הפרדה מתכוונת (0–5) לאותיות צפופות</p>
+        </div>
+        <div class="feature">
+            <span class="emoji">⌨️</span>
+            <h4>שיוך במקלדת</h4>
+            <p>לחיצה על כרטיס + הקלדת אות = שיוך מיידי עם מעבר אוטומטי. מיזוג ופיצול צורות</p>
+        </div>
+        <div class="feature">
+            <span class="emoji">👁️</span>
+            <h4>תצוגה מקדימה חיה</h4>
+            <p>הקלדת טקסט ותצוגה מיידית. כוונון גודל, הזזה וריווח לכל אות בנפרד או גלובלי</p>
+        </div>
+        <div class="feature">
+            <span class="emoji">✨</span>
+            <h4>עקומות Bézier</h4>
+            <p>עקומות קוואדרטיות חלקות לתוצאה מקצועית. תמיכה בחורים ואותיות סופיות עם descenders</p>
+        </div>
+        <div class="feature">
+            <span class="emoji">🔡</span>
+            <h4>תווים מ-Arial</h4>
+            <p>~46 תווים נפוצים (ספרות, פיסוק, סוגריים) מוזרקים אוטומטית לפונט</p>
+        </div>
+        <div class="feature">
+            <span class="emoji">💾</span>
+            <h4>שמירת פרויקט</h4>
+            <p>ייצוא/ייבוא לקובץ .hfm עצמאי — תמונה, זיהויים, שיוכים, כוונונים ומטא-דאטה</p>
+        </div>
+    </div>
+
+    <h3 style="margin-top: 3rem; font-weight: 700;">שלבי עבודה</h3>
+    <div class="steps">
+        <div class="step">
+            <h4>העלאת תמונה</h4>
+            <p>העלאת תמונה עם אותיות או טעינת פרויקט .hfm. כוונון רמת הפרדה</p>
+        </div>
+        <div class="step">
+            <h4>סקירת זיהויים</h4>
+            <p>מלבנים צבעוניים על כל צורה. גרירה להוספה, לחיצה למחיקה</p>
+        </div>
+        <div class="step">
+            <h4>שיוך אותיות</h4>
+            <p>לחיצה על כרטיס + הקלדת אות. מיזוג ופיצול לפי הצורך</p>
+        </div>
+        <div class="step">
+            <h4>תצוגה וכוונון</h4>
+            <p>הקלדת טקסט, כוונון גודל/הזזה/ריווח, "החל על הכל"</p>
+        </div>
+        <div class="step">
+            <h4>יצירת פונט</h4>
+            <p>שם + מטא-דאטה → קובץ TTF. ייצוא פרויקט לשימוש עתידי</p>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════ EDITOR ════════════════ -->
+<section id="editor">
+    <span class="section-label green">כלי #2</span>
+    <h2 class="section-title">✏️ Font Editor</h2>
+    <p class="section-desc">עורך ויזואלי לקבצי TTF — עריכת נקודות, קונטורים, שכבות ותצוגה מקדימה</p>
+
+    <div class="screenshots">
+        <div class="screenshot screenshot-full">
+            <img src="../screenshots/Screenshot_editor.png" alt="עורך פונטים ויזואלי">
+            <div class="screenshot-caption">ממשק עורך הפונטים — עריכת גליפים ויזואלית</div>
+        </div>
+    </div>
+
+    <div class="features-grid" style="margin-top: 3rem;">
+        <div class="feature">
+            <span class="emoji">🖱️</span>
+            <h4>בחירה מרובה</h4>
+            <p>Ctrl+Click, Shift+Click, Ctrl+A, או גרירת מרקיזה. הזזה, קנה מידה ומחיקה של בחירה</p>
+        </div>
+        <div class="feature">
+            <span class="emoji">🖊️</span>
+            <h4>כלי עט</h4>
+            <p>ציור קונטורים חדשים. Alt+Click לנקודות off-curve (עקומות קוואדרטיות)</p>
+        </div>
+        <div class="feature">
+            <span class="emoji">📐</span>
+            <h4>שכבות / קונטורים</h4>
+            <p>כל קונטור כשכבה עם צבע ייחודי, ניראות ומחיקה</p>
+        </div>
+        <div class="feature">
+            <span class="emoji">⭕</span>
+            <h4>עיגול פינות</h4>
+            <p>בחירת נקודות on-curve → "עגל פינות" עם בקרת רדיוס. החלפה בין on/off-curve</p>
+        </div>
+        <div class="feature">
+            <span class="emoji">↩️</span>
+            <h4>ביטול/חזרה</h4>
+            <p>Ctrl+Z / Ctrl+Y עד 50 רמות לכל גליף. כל פעולה שומרת מצב אוטומטית</p>
+        </div>
+        <div class="feature">
+            <span class="emoji">🌐</span>
+            <h4>עברית / אנגלית</h4>
+            <p>מתג שפה 🇮🇱 🇺🇸 בפינת הממשק. הבחירה נשמרת בדפדפן</p>
+        </div>
+    </div>
+
+    <h3 style="margin-top: 3rem; font-weight: 700;">קיצורי מקלדת</h3>
+    <table class="shortcuts-table">
+        <thead>
+            <tr><th>קיצור</th><th>פעולה</th></tr>
+        </thead>
+        <tbody>
+            <tr><td><kbd>V</kbd></td><td>כלי בחירה</td></tr>
+            <tr><td><kbd>M</kbd></td><td>מרקיזה</td></tr>
+            <tr><td><kbd>P</kbd></td><td>כלי עט</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>ביטול</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>חזרה</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd></td><td>בחר הכל</td></tr>
+            <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>שמור</td></tr>
+            <tr><td><kbd>Delete</kbd></td><td>מחק נקודות / איפוס גליף</td></tr>
+            <tr><td><kbd>↑↓←→</kbd></td><td>הזזה (10px, Shift=1px)</td></tr>
+            <tr><td><kbd>+</kbd> / <kbd>-</kbd></td><td>הגדל / הקטן</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>בטל בחירה / בטל עט</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- ════════════════ INSTALL ════════════════ -->
+<section id="install">
+    <span class="section-label">התחלה מהירה</span>
+    <h2 class="section-title">🚀 התקנה והפעלה</h2>
+    <p class="section-desc">Python 3.8+ ו-Windows. שלושה פקודות ואתם בפנים</p>
+
+    <div class="install-block">
+        <h3>התקנה</h3>
+        <p>שכפלו, התקינו, והריצו</p>
+        <pre><span class="comment"># שכפול הריפו</span>
+<span class="cmd">git clone</span> https://github.com/UberStorm/Image-To-Hebrew-Font-Generator.git
+<span class="cmd">cd</span> Image-To-Hebrew-Font-Generator
+
+<span class="comment"># התקנה (יוצר venv + מתקין חבילות)</span>
+<span class="cmd">install.bat</span></pre>
+    </div>
+
+    <div class="install-block" style="margin-top: 1rem;">
+        <h3>הפעלה</h3>
+        <p>ניתן להריץ את שניהם במקביל</p>
+        <pre><span class="comment"># יוצר פונטים — http://127.0.0.1:5000</span>
+<span class="cmd">run.bat</span>
+
+<span class="comment"># עורך פונטים — http://127.0.0.1:5001</span>
+<span class="cmd">run_fonteditor.bat</span></pre>
+    </div>
+</section>
+
+<!-- ════════════════ TECH ════════════════ -->
+<section id="tech">
+    <span class="section-label">מאחורי הקלעים</span>
+    <h2 class="section-title">🔧 טכנולוגיות</h2>
+    <p class="section-desc">ללא frameworks בצד לקוח — Vanilla JS בלבד</p>
+
+    <div class="tech-grid">
+        <div class="tech-item">
+            <h4>🐍 שרת</h4>
+            <p>Flask 2.3 + Flask-CORS · Python venv</p>
+        </div>
+        <div class="tech-item">
+            <h4>🖼️ עיבוד תמונה</h4>
+            <p>OpenCV 4.8 — Otsu, RETR_CCOMP, morphological operations</p>
+        </div>
+        <div class="tech-item">
+            <h4>🔤 פונטים</h4>
+            <p>fontTools — FontBuilder, TTGlyphPen, GlyphCoordinates, SVGPathPen</p>
+        </div>
+        <div class="tech-item">
+            <h4>🌐 צד לקוח</h4>
+            <p>Vanilla HTML/CSS/JS · Canvas API · SVG</p>
+        </div>
+    </div>
+</section>
+
+<!-- ════════════════ FOOTER ════════════════ -->
+<footer>
+    <p>
+        MIT License · נבנה ע"י
+        <a href="https://github.com/UberStorm" target="_blank">UberStorm</a>
+        ·
+        <a href="https://github.com/UberStorm/Image-To-Hebrew-Font-Generator" target="_blank">קוד מקור ב-GitHub</a>
+    </p>
+</footer>
+
+</body>
+</html>
