@@ -186,6 +186,52 @@ const LANG = {
             rotateBtn: 'סובב',
             rotateCw: 'עם כיוון השעון',
             rotateCcw: 'נגד כיוון השעון',
+            helpTitle: 'עזרה וקיצורי דרך',
+            helpBtn: '❓ עזרה',
+            helpBtnTitle: 'עזרה וקיצורי דרך (?)',
+            helpKeyboard: 'קיצורי מקלדת',
+            helpMouse: 'עכבר ומחוות',
+            helpToolbar: 'סרגל כלים',
+            helpFeatures: 'יכולות ותכונות',
+            helpTips: 'טיפים',
+            helpMouseLeft: 'לחיצה שמאלית על נקודה — בחירה',
+            helpMouseCtrl: 'Ctrl+לחיצה — הוספה/הסרה מבחירה',
+            helpMouseShift: 'Shift+לחיצה — הוספה לבחירה',
+            helpMouseDrag: 'גרירה — הזזת נקודה/נקודות',
+            helpMouseMiddle: 'לחצן אמצעי / Space+גרירה — גלילת קנבס',
+            helpMouseWheel: 'גלגלת — זום פנימה/החוצה',
+            helpMouseRight: 'לחיצה ימנית — תפריט הקשר',
+            helpMouseDbl: 'לחיצה כפולה (עט) — סיום קונטור',
+            helpMouseAlt: 'Alt+לחיצה (עט) — נקודת בקרה (off-curve)',
+            helpMouseClose: 'לחיצה ליד נק׳ ראשונה (עט) — סגירת קונטור',
+            helpMouseHover: 'ריחוף על נקודה — מידע בשורת מצב',
+            helpMousePreview: 'לחיצה על תו בתצוגה — מעבר לגליף',
+            helpToolSelect: 'V — מצב בחירה',
+            helpToolMarquee: 'M — מצב בחירה מרובעת',
+            helpToolPen: 'P — כלי עט (יצירת קונטור)',
+            helpToolUndo: '↩ ביטול / ↪ שחזור',
+            helpToolFlipH: '⇄ הפיכה אופקית',
+            helpToolFlipV: '⇅ הפיכה אנכית',
+            helpToolRotate: '⟳ סיבוב חופשי',
+            helpToolZoom: '➕ זום+ / ➖ זום− / ⊡ התאם',
+            helpToolPoints: 'נקודות / קווי עזר / ידיות / הצמד / סרגלים',
+            helpToolGuide: '📏 הוספת קו עזר',
+            helpFeatLoad: 'טעינת פונטים TTF/OTF מהשרת או העלאה',
+            helpFeatSave: 'שמירה / שמירה בשם / ייצוא TTF/WOFF/WOFF2',
+            helpFeatSvg: 'ייבוא SVG — הדבקת נתיב או העלאת קובץ',
+            helpFeatImg: 'ייבוא תמונה — זיהוי אוטומטי של קונטורים מ-PNG/JPG',
+            helpFeatMeta: 'עריכת מטאדטה — שם, מעצב, גרסה, מדדים',
+            helpFeatKern: 'עריכת ריווח (Kerning) — זוגות תווים',
+            helpFeatLayers: 'ניהול שכבות/קונטורים — ניראות, מחיקה, בחירה',
+            helpFeatTransform: 'טרנספורמציות — הזזה, קנה-מידה, הפיכה, סיבוב',
+            helpFeatPreview: 'תצוגה מקדימה — גופן חי, מרובה גדלים',
+            helpFeatI18n: 'ממשק דו-שפתי — עברית 🇮🇱 / אנגלית 🇺🇸',
+            helpTip1: 'לחץ ? בכל עת כדי לפתוח חלונית זו',
+            helpTip2: 'השתמש ב-Shift+חצים להזזה עדינה (1 יח׳)',
+            helpTip3: 'Escape מבטל ציור עט או מנקה בחירה',
+            helpTip4: 'ניתן לייבא SVG ותמונות ישירות לכל גליף',
+            helpTip5: 'הפעל Snap כדי ליישר נקודות לרשת',
+            helpTip6: 'Ctrl+C מעתיק נקודות נבחרות או גליף שלם',
             importImage: '🖼️ ייבוא תמונה',
             importImgTitle: 'ייבוא תמונה לגליף',
             importImgSuccess: 'תמונה יובאה בהצלחה',
@@ -365,6 +411,52 @@ const LANG = {
             rotateBtn: 'Rotate',
             rotateCw: 'Clockwise',
             rotateCcw: 'Counter-clockwise',
+            helpTitle: 'Help & Shortcuts',
+            helpBtn: '❓ Help',
+            helpBtnTitle: 'Help & Shortcuts (?)',
+            helpKeyboard: 'Keyboard Shortcuts',
+            helpMouse: 'Mouse & Gestures',
+            helpToolbar: 'Toolbar',
+            helpFeatures: 'Features & Capabilities',
+            helpTips: 'Tips',
+            helpMouseLeft: 'Left-click on point — select',
+            helpMouseCtrl: 'Ctrl+click — toggle in selection',
+            helpMouseShift: 'Shift+click — add to selection',
+            helpMouseDrag: 'Drag — move point(s)',
+            helpMouseMiddle: 'Middle button / Space+drag — pan canvas',
+            helpMouseWheel: 'Scroll wheel — zoom in/out',
+            helpMouseRight: 'Right-click — context menu',
+            helpMouseDbl: 'Double-click (pen) — finalize contour',
+            helpMouseAlt: 'Alt+click (pen) — off-curve control point',
+            helpMouseClose: 'Click near first point (pen) — close contour',
+            helpMouseHover: 'Hover on point — info in status bar',
+            helpMousePreview: 'Click preview char — jump to glyph',
+            helpToolSelect: 'V — Select mode',
+            helpToolMarquee: 'M — Marquee select mode',
+            helpToolPen: 'P — Pen tool (create contours)',
+            helpToolUndo: '↩ Undo / ↪ Redo',
+            helpToolFlipH: '⇄ Flip horizontal',
+            helpToolFlipV: '⇅ Flip vertical',
+            helpToolRotate: '⟳ Free rotate',
+            helpToolZoom: '➕ Zoom in / ➖ Zoom out / ⊡ Fit',
+            helpToolPoints: 'Points / Guides / Handles / Snap / Rulers',
+            helpToolGuide: '📏 Add guideline',
+            helpFeatLoad: 'Load TTF/OTF fonts from server or upload',
+            helpFeatSave: 'Save / Save As / Export TTF/WOFF/WOFF2',
+            helpFeatSvg: 'Import SVG — paste path or upload file',
+            helpFeatImg: 'Import Image — auto-detect contours from PNG/JPG',
+            helpFeatMeta: 'Edit metadata — name, designer, version, metrics',
+            helpFeatKern: 'Kerning editor — character pair spacing',
+            helpFeatLayers: 'Layer/contour management — visibility, delete, select',
+            helpFeatTransform: 'Transforms — move, scale, flip, rotate',
+            helpFeatPreview: 'Live preview — font rendering, multi-size',
+            helpFeatI18n: 'Bilingual UI — Hebrew 🇮🇱 / English 🇺🇸',
+            helpTip1: 'Press ? at any time to open this panel',
+            helpTip2: 'Use Shift+Arrows for fine nudge (1 unit)',
+            helpTip3: 'Escape cancels pen drawing or clears selection',
+            helpTip4: 'You can import SVG and images directly into any glyph',
+            helpTip5: 'Enable Snap to align points to the grid',
+            helpTip6: 'Ctrl+C copies selected points or the entire glyph',
             importImage: '🖼️ Import Image',
             importImgTitle: 'Import Image to Glyph',
             importImgSuccess: 'Image imported successfully',
@@ -458,6 +550,8 @@ function applyLangToUI() {
     dom.flipVBtn.title = t('flipVBtn');
     dom.rotateFreeBtn.title = t('rotateFreeTitle');
     dom.importImgBtn.title = t('importImgTitle');
+    dom.helpBtn.textContent = t('helpBtn');
+    dom.helpBtn.title = t('helpBtnTitle');
 
     // Language switcher active state
     $$('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === LANG.current));
@@ -601,6 +695,7 @@ function cacheDom() {
     dom.rotateFreeBtn  = $('#rotate-free-btn');
     dom.importImgBtn   = $('#import-img-btn');
     dom.importImgInput = $('#import-img-input');
+    dom.helpBtn        = $('#help-btn');
 }
 
 /* ---------- Init ---------- */
@@ -698,6 +793,7 @@ function wireEvents() {
     dom.flipVBtn.addEventListener('click', () => flipSelection('v'));
     dom.rotateFreeBtn.addEventListener('click', showFreeRotateDialog);
     dom.importImgInput.addEventListener('change', handleImportImage);
+    dom.helpBtn.addEventListener('click', showHelpDialog);
 }
 
 /* ---------- Mode ---------- */
@@ -2523,8 +2619,11 @@ function findNearestSegment(sv, g) {
 }
 
 /* ---------- Keyboard Shortcut Overlay ---------- */
-function showShortcutOverlay() {
-    if (document.querySelector('.shortcut-overlay')) { removeShortcutOverlay(); return; }
+function showHelpDialog() {
+    // Remove existing
+    const old = document.querySelector('#help-dialog-overlay');
+    if (old) { old.remove(); return; }
+
     const shortcuts = [
         ['V', t('selectV')],
         ['M', t('marqueeM')],
@@ -2532,34 +2631,110 @@ function showShortcutOverlay() {
         ['H', t('flipH')],
         ['Shift+H', t('flipV')],
         ['R', t('rotate90')],
+        ['Shift+R', t('rotate90') + ' (−90°)'],
         ['Ctrl+A', t('selectAll')],
         ['Ctrl+C', t('copy')],
         ['Ctrl+V', t('paste')],
         ['Ctrl+Z', t('undo')],
         ['Ctrl+Y', t('redo')],
         ['Ctrl+S', t('save')],
-        ['Space+Drag', t('panCanvas')],
+        ['Space', t('panCanvas')],
         ['Arrows', t('nudge')],
         ['Shift+Arrows', t('nudgeFine')],
-        ['+/-', t('scaleUpDown')],
+        ['+/−', t('scaleUpDown')],
         ['Delete', t('deleteSelPts')],
         ['Escape', t('deselectCancel')],
-        ['?', t('shortcuts')],
+        ['?', t('helpTitle')],
     ];
 
-    const overlay = document.createElement('div');
-    overlay.className = 'shortcut-overlay';
-    let html = `<h3>${t('shortcuts')}</h3><div class="shortcut-grid">`;
+    const mouseActions = [
+        t('helpMouseLeft'), t('helpMouseCtrl'), t('helpMouseShift'),
+        t('helpMouseDrag'), t('helpMouseMiddle'), t('helpMouseWheel'),
+        t('helpMouseRight'), t('helpMouseDbl'), t('helpMouseAlt'),
+        t('helpMouseClose'), t('helpMouseHover'), t('helpMousePreview'),
+    ];
+
+    const toolbarItems = [
+        t('helpToolSelect'), t('helpToolMarquee'), t('helpToolPen'),
+        t('helpToolUndo'), t('helpToolFlipH'), t('helpToolFlipV'),
+        t('helpToolRotate'), t('helpToolZoom'), t('helpToolPoints'),
+        t('helpToolGuide'),
+    ];
+
+    const features = [
+        t('helpFeatLoad'), t('helpFeatSave'), t('helpFeatSvg'),
+        t('helpFeatImg'), t('helpFeatMeta'), t('helpFeatKern'),
+        t('helpFeatLayers'), t('helpFeatTransform'), t('helpFeatPreview'),
+        t('helpFeatI18n'),
+    ];
+
+    const tips = [
+        t('helpTip1'), t('helpTip2'), t('helpTip3'),
+        t('helpTip4'), t('helpTip5'), t('helpTip6'),
+    ];
+
+    let shortcutHtml = '';
     for (const [key, desc] of shortcuts) {
-        html += `<kbd>${key}</kbd><span>${desc}</span>`;
+        shortcutHtml += `<kbd>${key}</kbd><span>${desc}</span>`;
     }
-    html += `</div><button class="prop-btn" onclick="this.parentElement.remove()">${t('close')}</button>`;
-    overlay.innerHTML = html;
+
+    const listHtml = arr => arr.map(s => `<li>${s}</li>`).join('');
+
+    const overlay = document.createElement('div');
+    overlay.className = 'dialog-overlay';
+    overlay.id = 'help-dialog-overlay';
+    overlay.innerHTML = `
+        <div class="help-dialog">
+            <h2>${t('helpTitle')}</h2>
+            <div class="help-tabs">
+                <button class="help-tab active" data-tab="keyboard">⌨ ${t('helpKeyboard')}</button>
+                <button class="help-tab" data-tab="mouse">🖱 ${t('helpMouse')}</button>
+                <button class="help-tab" data-tab="toolbar">🔧 ${t('helpToolbar')}</button>
+                <button class="help-tab" data-tab="features">⭐ ${t('helpFeatures')}</button>
+                <button class="help-tab" data-tab="tips">💡 ${t('helpTips')}</button>
+            </div>
+            <div class="help-content">
+                <div class="help-section active" data-section="keyboard">
+                    <div class="shortcut-grid">${shortcutHtml}</div>
+                </div>
+                <div class="help-section" data-section="mouse">
+                    <ul class="help-list">${listHtml(mouseActions)}</ul>
+                </div>
+                <div class="help-section" data-section="toolbar">
+                    <ul class="help-list">${listHtml(toolbarItems)}</ul>
+                </div>
+                <div class="help-section" data-section="features">
+                    <ul class="help-list">${listHtml(features)}</ul>
+                </div>
+                <div class="help-section" data-section="tips">
+                    <ul class="help-list tips-list">${listHtml(tips)}</ul>
+                </div>
+            </div>
+            <button class="prop-btn help-close-btn" id="help-close-btn">${t('close')}</button>
+        </div>
+    `;
+
     document.body.appendChild(overlay);
+
+    // Wire tab switching
+    overlay.querySelectorAll('.help-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            overlay.querySelectorAll('.help-tab').forEach(t => t.classList.remove('active'));
+            overlay.querySelectorAll('.help-section').forEach(s => s.classList.remove('active'));
+            tab.classList.add('active');
+            overlay.querySelector(`.help-section[data-section="${tab.dataset.tab}"]`).classList.add('active');
+        });
+    });
+
+    overlay.querySelector('#help-close-btn').addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
+// Legacy alias
+function showShortcutOverlay() { showHelpDialog(); }
+
 function removeShortcutOverlay() {
-    const el = document.querySelector('.shortcut-overlay');
+    const el = document.querySelector('#help-dialog-overlay');
     if (el) el.remove();
 }
 

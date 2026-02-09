@@ -910,6 +910,122 @@ html[dir="rtl"] body { direction: rtl; }
     min-width: 80px;
 }
 
+/* ===== Help Dialog ===== */
+.help-dialog {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 16px 50px rgba(0,0,0,0.65);
+    padding: 28px 32px;
+    max-width: 620px;
+    width: 90vw;
+    max-height: 82vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.help-dialog h2 {
+    color: var(--accent);
+    text-align: center;
+    margin: 0 0 18px;
+    font-size: 1.25rem;
+    letter-spacing: 0.5px;
+}
+
+.help-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.help-tab {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 14px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.help-tab:hover {
+    background: var(--bg-hover);
+    color: var(--text);
+}
+
+.help-tab.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    font-weight: 600;
+}
+
+.help-content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.help-section {
+    display: none;
+}
+
+.help-section.active {
+    display: block;
+    animation: helpFadeIn 0.2s ease;
+}
+
+@keyframes helpFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.help-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.help-list li {
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.help-list li:last-child {
+    border-bottom: none;
+}
+
+.help-list li:hover {
+    background: var(--bg-hover);
+}
+
+.tips-list li {
+    padding-inline-start: 24px;
+    position: relative;
+}
+
+.tips-list li::before {
+    content: '💡';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 8px;
+}
+
+.help-close-btn {
+    display: block;
+    margin: 16px auto 0;
+    min-width: 100px;
+}
+
 /* ===== Bezier Handle Lines ===== */
 .handle-line {
     stroke: var(--text-dim);
