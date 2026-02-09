@@ -10,17 +10,17 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         :root {
-            --bg: #f5f5fa;
-            --bg-card: #ffffff;
-            --bg-card-hover: #f0eef8;
-            --border: #e0dde8;
-            --text: #1a1a2e;
-            --text-dim: #6b6b85;
+            --bg: #eeedf3;
+            --bg-card: #f6f5fa;
+            --bg-card-hover: #edeaf5;
+            --border: #d8d5e0;
+            --text: #2a2a3e;
+            --text-dim: #7a7a94;
             --accent: #6c5ce7;
             --accent-light: #5a4bd1;
-            --accent-glow: rgba(108, 92, 231, 0.12);
+            --accent-glow: rgba(108, 92, 231, 0.1);
             --green: #00a884;
-            --green-glow: rgba(0, 168, 132, 0.1);
+            --green-glow: rgba(0, 168, 132, 0.08);
             --radius: 16px;
             --radius-sm: 10px;
         }
@@ -42,7 +42,7 @@
         }
         .glow-bg::before, .glow-bg::after {
             content: ''; position: absolute; border-radius: 50%;
-            filter: blur(140px); opacity: 0.25;
+            filter: blur(160px); opacity: 0.18;
         }
         .glow-bg::before {
             width: 600px; height: 600px; background: #a29bfe;
@@ -56,7 +56,7 @@
         /* ── Nav ── */
         nav {
             position: fixed; top: 0; right: 0; left: 0; z-index: 100;
-            background: rgba(245, 245, 250, 0.85);
+            background: rgba(238, 237, 243, 0.85);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
             padding: 0 2rem;
@@ -97,7 +97,7 @@
         .install-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
         .install-card p { color: var(--text-dim); font-size: 0.88rem; margin-bottom: 0.75rem; }
         .install-card pre {
-            background: #1a1a2e; border-radius: var(--radius-sm);
+            background: #2a2a3e; border-radius: var(--radius-sm);
             padding: 1rem 1.25rem; overflow-x: auto;
             font-size: 0.85rem; line-height: 1.8;
             direction: ltr; text-align: left; color: #c8c8e0;
